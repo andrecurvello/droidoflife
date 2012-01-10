@@ -5,6 +5,7 @@ import android.opengl.GLSurfaceView;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
@@ -14,7 +15,7 @@ import com.chrulri.droidoflife.LifeRuntime.LifeRuntimeException;
 public class DroidOfLifeActivity extends Activity {
 	static final String TAG = DroidOfLifeActivity.class.getSimpleName();
 
-	static final long ITERATION_DELAY_MS = 500;
+	static final long ITERATION_DELAY_MS = 100;
 
 	private IterationTask iterationTask;
 	private GLSurfaceView glView;
@@ -28,8 +29,7 @@ public class DroidOfLifeActivity extends Activity {
 		}
 		// append automatic mode
 		if (iterationTask != null) {
-			CharSequence auto = getText(R.string.auto_short);
-			title += " - " + auto;
+			title += " - " + getText(R.string.auto_short);
 		}
 
 		setTitle(title);
@@ -131,6 +131,16 @@ public class DroidOfLifeActivity extends Activity {
 		} catch (IllegalAccessException e) {
 			// ignore
 		}
+	}
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		// exit on back
+		if(keyCode == KeyEvent.KEYCODE_BACK) {
+			finish();
+			return true;
+		}
+		return onKeyDown(keyCode, event);
 	}
 
 	class IterationTask extends AsyncTask<Void, Void, Void> {
