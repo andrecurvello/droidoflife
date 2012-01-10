@@ -15,7 +15,7 @@ final class LifeRuntime {
 		System.loadLibrary("dol");
 	}
 
-	private static native int nRuntimeInit(int width, int height);
+	private static native int nRuntimeCreate(int width, int height);
 
 	private static native int nRuntimeIterate();
 	
@@ -37,16 +37,22 @@ final class LifeRuntime {
 		iteration = 0;
 	}
 
+	public static int getIteration() {
+		if(runtime == null)
+			return 0;
+		return runtime.iteration;
+	}
+	
 	/**
-	 * initialize runtime and opengl context
+	 * creates runtime
 	 * 
 	 * @param width count of cells per row
 	 * @param height count of rows of cells
 	 * @throws LifeRuntimeException 
 	 */
-	public static void init(int width, int height) throws LifeRuntimeException {
+	public static void create(int width, int height) throws LifeRuntimeException {
 		runtime = new LifeRuntime();
-		int ret = nRuntimeInit(width, height);
+		int ret = nRuntimeCreate(width, height);
 		if (ret != OK) {
 			throw new LifeRuntimeException("failed to initialize the droid of life runtime", "_init", ret);
 		}
@@ -70,6 +76,7 @@ final class LifeRuntime {
 
 	/**
 	 * destroy that beautiful place of life
+	 * 
 	 * @throws LifeRuntimeException 
 	 * @throws IllegalAccessException if runtime is not initialized yet
 	 */

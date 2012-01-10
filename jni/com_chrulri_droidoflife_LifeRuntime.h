@@ -11,10 +11,10 @@ extern "C" {
 #define com_chrulri_droidoflife_LifeRuntime_OK 0L
 /*
  * Class:     com_chrulri_droidoflife_LifeRuntime
- * Method:    nRuntimeInit
+ * Method:    nRuntimeCreate
  * Signature: (II)I
  */
-JNIEXPORT jint JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeInit
+JNIEXPORT jint JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate
   (JNIEnv *, jclass, jint, jint);
 
 /*

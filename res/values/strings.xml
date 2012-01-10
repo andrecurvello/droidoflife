@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Droid of Life</string>
-
+    <string name="auto_short">AUTO</string>
+    <string name="mm_short">MM</string>
+    <string name="mm_active">Manual Mode active (press to iterate)</string>
+    <string name="mm_inactive">Manual Mode inactive (press to activate/deactive automatic iteration)</string>
 </resources>
