@@ -21,9 +21,9 @@
 #define COLOR_BORN  RGB888TO565(0xA4>>1,0xC6>>1,0x39>>1)	// half of alive
 #define COLOR_DEAD	RGB888TO565(0x00,0x00,0x00)				// dead = black
 
-#define S_PIXELS_SIZE (sizeof(s_pixels[0]) * s_life_w * s_life_h)
-
 #define RETOK com_chrulri_droidoflife_LifeRuntime_OK
+
+typedef uint16_t pixbuf_t;
 
 static void check_gl_error(const char* op) {
 	GLint error;
@@ -33,7 +33,9 @@ static void check_gl_error(const char* op) {
 }
 
 /* *** VARIABLES *** */
-static uint16_t *s_pixels = 0;
+static size_t s_pixels_size = 0;// pixel buffer size
+static pixbuf_t *s_pixels = 0;	// current pixel buffer
+static pixbuf_t *s_pixelss = 0; // successor pixel buffer
 static pthread_mutex_t s_pixels_mutex;
 static GLuint s_texture = 0;
 static int s_life_w = 0;
@@ -63,11 +65,15 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED,
 	// initialize variables
 	s_life_w = width;
 	s_life_h = height;
-	s_pixels = malloc(S_PIXELS_SIZE);
+
+	s_pixels_size = sizeof(s_pixels[0]) * s_life_w * s_life_h;
+
+	s_pixels = malloc(s_pixels_size);
+	s_pixelss = malloc(s_pixels_size);
 
 	// random start
 	int size = width*height;
-	uint16_t *pixels = s_pixels;
+	pixbuf_t *pixels = s_pixels;
 	while(size--) {
 		*(pixels++) = rand() % 3 == 0 ? COLOR_ALIVE : COLOR_DEAD;
 	}
@@ -80,7 +86,19 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED
 
 	pthread_mutex_lock(&s_pixels_mutex);
 
+	// clear successor buffer
+	memset(s_pixelss, 0, s_pixels_size);
+
+	/*** this is where the magic begins ***/
+
 	// TODO implement
+
+	/*** the magic has happened, amen! ***/
+
+	// swap buffers, current pixel buffer is next successor buffer
+	pixbuf_t *tmp = s_pixels;
+	s_pixels = s_pixelss;
+	s_pixelss = tmp;
 
 	pthread_mutex_unlock(&s_pixels_mutex);
 	return RETOK;
@@ -93,7 +111,9 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy(JNIEnv *env UNUSED
 	pthread_mutex_lock(&s_pixels_mutex);
 
 	free(s_pixels);
-	s_pixels = 0;
+	free(s_pixelss);
+	s_pixels = s_pixelss = 0;
+	s_pixels_size = 0;
 	s_life_w = s_life_h = 0;
 
 	pthread_mutex_unlock(&s_pixels_mutex);
