@@ -220,6 +220,8 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nGLrender(JNIEnv *env UNUSED, jcla
 
 	lockPixels();
 
+	LOGI("rendering w=%d, h=%d, ptr=%d, sw=%d, sh=%d", s_life_w, s_life_h, s_pixels, s_scene_w, s_scene_h);
+
 	if(s_pixels) {
 		// render pixels
 		glTexImage2D(
