@@ -8,44 +8,37 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
-import android.widget.Toast;
 
 import com.chrulri.droidoflife.LifeRuntime.LifeRuntimeException;
 
 public class DroidOfLifeActivity extends Activity {
 	static final String TAG = DroidOfLifeActivity.class.getSimpleName();
-	
+
 	static final long ITERATION_DELAY_MS = 500;
 
-	private boolean manualMode;
 	private IterationTask iterationTask;
 	private GLSurfaceView glView;
-	
+
 	private void refreshTitle() {
 		String title = "" + getText(R.string.app_name);
 		// append iteration
 		int iteration = LifeRuntime.getIteration();
-		if(iteration > 0) {
+		if (iteration > 0) {
 			title += " (#" + iteration + ")";
 		}
-		// append manual / automatic mode
-		if(manualMode) {
-			CharSequence mm = getText(R.string.mm_short);
-			title += " - " + mm;
-		} else if(iterationTask != null) {
+		// append automatic mode
+		if (iterationTask != null) {
 			CharSequence auto = getText(R.string.auto_short);
 			title += " - " + auto;
 		}
 
 		setTitle(title);
 	}
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		manualMode = false;
-		
+
 		// TODO ask for width/height
 		final int width = 32;
 		final int height = 32;
@@ -55,7 +48,7 @@ public class DroidOfLifeActivity extends Activity {
 		} catch (LifeRuntimeException e) {
 			e.printStackTrace();
 			// TODO show error
-			
+
 			// emergency exit
 			finish();
 			return;
@@ -67,17 +60,7 @@ public class DroidOfLifeActivity extends Activity {
 		glView.setOnLongClickListener(new OnLongClickListener() {
 			@Override
 			public boolean onLongClick(View v) {
-				if(manualMode) {
-					// manual iteration
-					try {
-						LifeRuntime.iterate();
-						glView.requestRender();
-					} catch (LifeRuntimeException e) {
-						Log.e(TAG, "ManualMode", e);
-					} catch (IllegalAccessException e) {
-						Log.e(TAG, "ManualMode", e);
-					}
-				} else if(iterationTask == null) {
+				if (iterationTask == null) {
 					iterationTask = new IterationTask();
 					iterationTask.execute();
 				} else {
@@ -92,16 +75,20 @@ public class DroidOfLifeActivity extends Activity {
 		glView.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				manualMode = !manualMode;
-				if(manualMode) {
-					// disable iteration task for manual mode
-					if(iterationTask != null) {
-						iterationTask.cancel(false);
-						iterationTask = null;
-					}
-					Toast.makeText(DroidOfLifeActivity.this, R.string.mm_active, Toast.LENGTH_SHORT);
+				// disable iteration task for manual mode
+				if (iterationTask != null) {
+					iterationTask.cancel(false);
+					iterationTask = null;
 				} else {
-					Toast.makeText(DroidOfLifeActivity.this, R.string.mm_inactive, Toast.LENGTH_SHORT);
+					// manual iteration
+					try {
+						LifeRuntime.iterate();
+						glView.requestRender();
+					} catch (LifeRuntimeException e) {
+						Log.e(TAG, "ManualMode", e);
+					} catch (IllegalAccessException e) {
+						Log.e(TAG, "ManualMode", e);
+					}
 				}
 				refreshTitle();
 			}
@@ -110,7 +97,7 @@ public class DroidOfLifeActivity extends Activity {
 		setContentView(glView);
 
 		refreshTitle();
-		
+
 		// Manual
 		// TODO show manual
 	}
@@ -119,21 +106,21 @@ public class DroidOfLifeActivity extends Activity {
 	protected void onResume() {
 		super.onResume();
 		// restart iteration
-		if(iterationTask != null) {
+		if (iterationTask != null) {
 			iterationTask = new IterationTask();
 			iterationTask.execute();
 		}
 	}
-	
+
 	@Override
 	protected void onPause() {
 		super.onPause();
 		// pause iteration
-		if(iterationTask != null) {
+		if (iterationTask != null) {
 			iterationTask.cancel(false);
 		}
 	}
-	
+
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
@@ -151,7 +138,7 @@ public class DroidOfLifeActivity extends Activity {
 			// ignore
 		}
 	}
-	
+
 	class IterationTask extends AsyncTask<Void, Void, Void> {
 
 		@Override
@@ -161,7 +148,7 @@ public class DroidOfLifeActivity extends Activity {
 
 		@Override
 		protected Void doInBackground(Void... params) {
-			while(!isCancelled()) {
+			while (!isCancelled()) {
 				// new generation ready, hurray!
 				try {
 					LifeRuntime.iterate();
