@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <android/log.h>
 
+#include <errno.h>
 #include <stdlib.h>
 #include <pthread.h>
 
@@ -21,16 +22,10 @@
 #define COLOR_BORN  RGB888TO565(0xA4>>1,0xC6>>1,0x39>>1)	// half of alive
 #define COLOR_DEAD	RGB888TO565(0x00,0x00,0x00)				// dead = black
 
-#define RETOK com_chrulri_droidoflife_LifeRuntime_OK
+#define RET_OK com_chrulri_droidoflife_LifeRuntime_OK
+#define RET_NOMEMORY com_chrulri_droidoflife_LifeRuntime_NOMEMORY
 
 typedef uint16_t pixbuf_t;
-
-static void check_gl_error(const char* op) {
-	GLint error;
-	for (error = glGetError(); error; error = glGetError()) {
-		LOGE("after %s() glError (0x%x)\n", op, error);
-	}
-}
 
 /* *** VARIABLES *** */
 static size_t s_pixels_size = 0;// pixel buffer size
@@ -43,12 +38,31 @@ static int s_life_h = 0;
 static int s_scene_w = 0;
 static int s_scene_h = 0;
 
+/* *** UTILITIES *** */
+static void checkGLerror(const char* op) {
+	GLint error;
+	for (error = glGetError(); error; error = glGetError()) {
+		LOGE("after %s() glError (0x%x)", op, error);
+	}
+}
+
+static inline void destroyRuntime() {
+	free(s_pixels);
+	free(s_pixelss);
+	s_pixels = s_pixelss = 0;
+	s_pixels_size = 0;
+	s_life_w = s_life_h = 0;
+}
+
 /* *** INITIALIZATION *** */
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 	LOGI("JNI_OnLoad(..) called");
+	int ret;
 
 	// initialize mutex
-	pthread_mutex_init(&s_pixels_mutex, NULL);
+	if((ret = pthread_mutex_init(&s_pixels_mutex, NULL))) {
+		LOGE("pthread_mutex_init failed (0x%x)", ret);
+	}
 
 	// go ahead..
 	return JNI_VERSION_1_6;
@@ -57,11 +71,15 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 /* *** RUNTIME *** */
 jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED, jclass clazz UNUSED, jint width, jint height) {
 	LOGI("nRuntimeCreate(%d, %d)", width, height);
+	int ret;
 
 	// initialize random
 	srand ( time(NULL) );
 
-	pthread_mutex_lock(&s_pixels_mutex);
+	if((ret = pthread_mutex_lock(&s_pixels_mutex))) {
+		LOGE("phread_mutex_unlock failed (0x%x)", ret);
+	}
+
 	// initialize variables
 	s_life_w = width;
 	s_life_h = height;
@@ -69,7 +87,17 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED,
 	s_pixels_size = sizeof(s_pixels[0]) * s_life_w * s_life_h;
 
 	s_pixels = malloc(s_pixels_size);
+	if(!s_pixels) {
+		LOGE("s_pixels failed to malloc(%d)", s_pixels_size);
+		destroyRuntime();
+		return errno;
+	}
 	s_pixelss = malloc(s_pixels_size);
+	if(!s_pixelss) {
+		LOGE("s_pixelss failed to malloc(%d)", s_pixels_size);
+		destroyRuntime();
+		return errno;
+	}
 
 	// random start
 	int size = width*height;
@@ -77,14 +105,20 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED,
 	while(size--) {
 		*(pixels++) = rand() % 3 == 0 ? COLOR_ALIVE : COLOR_DEAD;
 	}
-	pthread_mutex_unlock(&s_pixels_mutex);
-	return RETOK;
+
+	if((ret = pthread_mutex_unlock(&s_pixels_mutex))) {
+		LOGE("phread_mutex_unlock failed (0x%x)", ret);
+	}
+	return RET_OK;
 }
 
-jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED, jclass clazz UNUSED) {
+void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED, jclass clazz UNUSED) {
 	LOGI("nRuntimeIterate() called");
+	int ret;
 
-	pthread_mutex_lock(&s_pixels_mutex);
+	if((ret = pthread_mutex_lock(&s_pixels_mutex))) {
+		LOGE("phread_mutex_lock failed (0x%x)", ret);
+	}
 
 	// clear successor buffer
 	memset(s_pixelss, 0, s_pixels_size);
@@ -100,34 +134,38 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED
 	s_pixels = s_pixelss;
 	s_pixelss = tmp;
 
-	pthread_mutex_unlock(&s_pixels_mutex);
-	return RETOK;
+	if((ret = pthread_mutex_unlock(&s_pixels_mutex))) {
+		LOGE("phread_mutex_unlock failed (0x%x)", ret);
+	}
 }
 
 
-jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy(JNIEnv *env UNUSED, jclass clazz UNUSED) {
+void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy(JNIEnv *env UNUSED, jclass clazz UNUSED) {
 	LOGI("nRuntimeDestroy() called");
+	int ret;
 
-	pthread_mutex_lock(&s_pixels_mutex);
+	if((ret = pthread_mutex_lock(&s_pixels_mutex))) {
+		LOGE("phread_mutex_lock failed (0x%x)", ret);
+	}
 
-	free(s_pixels);
-	free(s_pixelss);
-	s_pixels = s_pixelss = 0;
-	s_pixels_size = 0;
-	s_life_w = s_life_h = 0;
+	destroyRuntime();
 
-	pthread_mutex_unlock(&s_pixels_mutex);
-	return RETOK;
+	if((ret = pthread_mutex_unlock(&s_pixels_mutex))) {
+		LOGE("phread_mutex_unlock failed (0x%x)", ret);
+	}
 }
 
 /* *** OPENGL *** */
 void Java_com_chrulri_droidoflife_LifeRuntime_nGLrender(JNIEnv *env UNUSED, jclass clazz UNUSED) {
 	LOGI("nGLrender() called");
-
-	pthread_mutex_lock(&s_pixels_mutex);
+	int ret;
 
 	// clear buffer
 	glClear(GL_COLOR_BUFFER_BIT);
+
+	if((ret = pthread_mutex_lock(&s_pixels_mutex))) {
+		LOGE("phread_mutex_lock failed (0x%x)", ret);
+	}
 
 	if(s_pixels) {
 		// render pixels
@@ -140,12 +178,14 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nGLrender(JNIEnv *env UNUSED, jcla
 			GL_RGB,			/* format */
 			GL_UNSIGNED_SHORT_5_6_5,/* type */
 			s_pixels);		/* pixels */
-		check_gl_error("glTexImage2D");
+		checkGLerror("glTexImage2D");
 		glDrawTexiOES(0, 0, 0, s_scene_w, s_scene_h);
-		check_gl_error("glDrawTexiOES");
+		checkGLerror("glDrawTexiOES");
 	}
 
-	pthread_mutex_unlock(&s_pixels_mutex);
+	if((ret = pthread_mutex_unlock(&s_pixels_mutex))) {
+		LOGE("phread_mutex_unlock failed (0x%x)", ret);
+	}
 }
 
 void Java_com_chrulri_droidoflife_LifeRuntime_nGLresize(JNIEnv *env UNUSED, jclass clazz UNUSED, jint width, jint height) {
@@ -158,12 +198,12 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nGLresize(JNIEnv *env UNUSED, jcla
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glShadeModel(GL_FLAT);
-	check_gl_error("glShadeModel");
+	checkGLerror("glShadeModel");
 	glColor4x(0x10000, 0x10000, 0x10000, 0x10000);
-	check_gl_error("glColor4x");
-	int rect[4] = {0, s_life_h, s_life_w, -s_life_h};
+	checkGLerror("glColor4x");
+	int rect[4] = {0, 0, s_life_w, s_life_h};
 	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_CROP_RECT_OES, rect);
-	check_gl_error("glTexParameteriv");
+	checkGLerror("glTexParameteriv");
 	s_scene_w = width;
 	s_scene_h = height;
 }

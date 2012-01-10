@@ -10,6 +10,7 @@ final class LifeRuntime {
 	/* ************************************************************************************************************* */
 	
 	static final int OK = 0;
+	static final int NOMEMORY = 1;
 
 	static {
 		System.loadLibrary("dol");
@@ -17,9 +18,9 @@ final class LifeRuntime {
 
 	private static native int nRuntimeCreate(int width, int height);
 
-	private static native int nRuntimeIterate();
+	private static native void nRuntimeIterate();
 	
-	private static native int nRuntimeDestroy();
+	private static native void nRuntimeDestroy();
 	
 	/* ************************************************************************************************************* */
 	
@@ -62,30 +63,22 @@ final class LifeRuntime {
 	 * iterate through one generation of life
 	 * 
 	 * @return number of generation
-	 * @throws LifeRuntimeException 
 	 * @throws IllegalAccessException if runtime is not initialized yet
 	 */
-	public static int iterate() throws LifeRuntimeException, IllegalAccessException {
+	public static int iterate() throws IllegalAccessException {
 		checkRuntime();
-		int ret = nRuntimeIterate();
-		if (ret != OK) {
-			throw new LifeRuntimeException("iteration failed", "_iterate", ret);
-		}
+		nRuntimeIterate();
 		return ++runtime.iteration;
 	}
 
 	/**
 	 * destroy that beautiful place of life
 	 * 
-	 * @throws LifeRuntimeException 
 	 * @throws IllegalAccessException if runtime is not initialized yet
 	 */
-	public static void destroy() throws LifeRuntimeException, IllegalAccessException {
+	public static void destroy() throws IllegalAccessException {
 		checkRuntime();
-		int ret = nRuntimeDestroy();
-		if (ret != OK) {
-			throw new LifeRuntimeException("destruction failed", "_destroy", ret);
-		}
+		nRuntimeDestroy();
 		runtime = null;
 	}
 

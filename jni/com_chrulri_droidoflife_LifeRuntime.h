@@ -9,6 +9,8 @@ extern "C" {
 #endif
 #undef com_chrulri_droidoflife_LifeRuntime_OK
 #define com_chrulri_droidoflife_LifeRuntime_OK 0L
+#undef com_chrulri_droidoflife_LifeRuntime_NOMEMORY
+#define com_chrulri_droidoflife_LifeRuntime_NOMEMORY 1L
 /*
  * Class:     com_chrulri_droidoflife_LifeRuntime
  * Method:    nRuntimeCreate
@@ -20,17 +22,17 @@ JNIEXPORT jint JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate
 /*
  * Class:     com_chrulri_droidoflife_LifeRuntime
  * Method:    nRuntimeIterate
- * Signature: ()I
+ * Signature: ()V
  */
-JNIEXPORT jint JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate
+JNIEXPORT void JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate
   (JNIEnv *, jclass);
 
 /*
  * Class:     com_chrulri_droidoflife_LifeRuntime
  * Method:    nRuntimeDestroy
- * Signature: ()I
+ * Signature: ()V
  */
-JNIEXPORT jint JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy
+JNIEXPORT void JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy
   (JNIEnv *, jclass);
 
 /*

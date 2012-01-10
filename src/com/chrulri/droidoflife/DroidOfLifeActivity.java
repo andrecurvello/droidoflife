@@ -84,8 +84,6 @@ public class DroidOfLifeActivity extends Activity {
 					try {
 						LifeRuntime.iterate();
 						glView.requestRender();
-					} catch (LifeRuntimeException e) {
-						Log.e(TAG, "ManualMode", e);
 					} catch (IllegalAccessException e) {
 						Log.e(TAG, "ManualMode", e);
 					}
@@ -126,14 +124,10 @@ public class DroidOfLifeActivity extends Activity {
 		super.onDestroy();
 		// remove iteration task
 		iterationTask = null;
-		// remove OpenGL view
-		setContentView(null);
 		glView = null;
 		// destroy life with a nuclear bomb (!!)
 		try {
 			LifeRuntime.destroy();
-		} catch (LifeRuntimeException e) {
-			Log.e(TAG, "onStop", e);
 		} catch (IllegalAccessException e) {
 			// ignore
 		}
@@ -155,8 +149,6 @@ public class DroidOfLifeActivity extends Activity {
 					glView.requestRender();
 					// tell everyone
 					publishProgress();
-				} catch (LifeRuntimeException e) {
-					Log.e(TAG, "IterationTask", e);
 				} catch (IllegalAccessException e) {
 					Log.e(TAG, "IterationTask", e);
 					return null;
