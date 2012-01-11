@@ -26,6 +26,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -57,20 +58,10 @@ public class DroidOfLifeActivity extends Activity {
 		setTitle(title);
 	}
 	
-	private void doRender() {
-		Canvas canvas = view.getHolder().lockCanvas();
-
-		LifeRuntime.render(bitmap);
-
-		Rect dst = new Rect(0, 0, view.getWidth(), view.getHeight());
-		canvas.drawBitmap(bitmap, null, dst, null);
-
-		view.getHolder().unlockCanvasAndPost(canvas);
-	}
-
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+	private void restartRuntime() {
+		if(bitmap != null) {
+			LifeRuntime.destroy();
+		}
 
 		// TODO ask for width/height
 		final int width = 200;
@@ -86,6 +77,27 @@ public class DroidOfLifeActivity extends Activity {
 			finish();
 			return;
 		}
+
+		bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+	}
+
+	private void doRender() {
+		Canvas canvas = view.getHolder().lockCanvas();
+
+		LifeRuntime.render(bitmap);
+
+		Rect dst = new Rect(0, 0, view.getWidth(), view.getHeight());
+		canvas.drawBitmap(bitmap, null, dst, null);
+
+		view.getHolder().unlockCanvasAndPost(canvas);
+	}
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+
+		restartRuntime();
+
 		view = new SurfaceView(this);
 		view.setOnLongClickListener(new OnLongClickListener() {
 			@Override
@@ -138,8 +150,6 @@ public class DroidOfLifeActivity extends Activity {
 			}
 			
 		});
-
-		bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 		
 		setContentView(view);
 
@@ -176,11 +186,21 @@ public class DroidOfLifeActivity extends Activity {
 		view = null;
 		bitmap = null;
 		// destroy life with a nuclear bomb (!!)
-		try {
-			LifeRuntime.destroy();
-		} catch (IllegalAccessException e) {
-			// ignore
+		LifeRuntime.destroy();
+	}
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		switch(keyCode) {
+		case KeyEvent.KEYCODE_BACK:
+			finish();
+			return true;
+		case KeyEvent.KEYCODE_MENU:
+			restartRuntime();
+			doRender();
+			return true;
 		}
+		return super.onKeyDown(keyCode, event);
 	}
 
 	class IterationTask extends AsyncTask<Void, Void, Void> {

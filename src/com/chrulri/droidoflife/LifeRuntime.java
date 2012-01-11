@@ -95,11 +95,8 @@ final class LifeRuntime {
 
 	/**
 	 * destroy that beautiful place of life
-	 * 
-	 * @throws IllegalAccessException if runtime is not initialized yet
 	 */
-	public static void destroy() throws IllegalAccessException {
-		checkRuntime();
+	public static void destroy() {
 		nRuntimeDestroy();
 		runtime = null;
 	}
