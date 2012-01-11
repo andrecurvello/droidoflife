@@ -3,7 +3,7 @@ Droid of Life
 
 This is an experimental game for Android based on [Conway's Game of Life][1].
 
-It will be available in the Android Market for free: [Droid of Life][2]
+It is available on the Android Market for free: [Droid of Life][2]
 
 
 Feel free to fork, create issues, [buy me a beer][3] or just having fun!
