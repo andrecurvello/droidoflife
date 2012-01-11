@@ -8,6 +8,8 @@ It is available on the Android Market for free: [Droid of Life][2]
 
 Feel free to fork, create issues, [buy me a beer][3] or just having fun!
 
+If you fork it, feel free to send me pull requests for your awesome new features so they'll make it on the market.
+
 LICENSE
 =======
  ******************************************************************************
