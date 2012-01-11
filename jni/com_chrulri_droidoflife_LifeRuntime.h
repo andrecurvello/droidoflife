@@ -9,8 +9,6 @@ extern "C" {
 #endif
 #undef com_chrulri_droidoflife_LifeRuntime_OK
 #define com_chrulri_droidoflife_LifeRuntime_OK 0L
-#undef com_chrulri_droidoflife_LifeRuntime_NOMEMORY
-#define com_chrulri_droidoflife_LifeRuntime_NOMEMORY 1L
 /*
  * Class:     com_chrulri_droidoflife_LifeRuntime
  * Method:    nRuntimeCreate

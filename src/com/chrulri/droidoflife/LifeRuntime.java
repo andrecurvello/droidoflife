@@ -29,7 +29,6 @@ final class LifeRuntime {
 	/* ************************************************************************************************************* */
 	
 	static final int OK = 0;
-	static final int NOMEMORY = 1;
 
 	static {
 		System.loadLibrary("dol");

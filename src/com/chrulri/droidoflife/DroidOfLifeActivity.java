@@ -79,6 +79,8 @@ public class DroidOfLifeActivity extends Activity {
 		}
 
 		bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+
+		refreshTitle();
 	}
 
 	private void doRender() {

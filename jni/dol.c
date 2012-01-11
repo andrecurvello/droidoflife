@@ -25,9 +25,9 @@
 
 #define UNUSED  __attribute__((unused))
 
-#define SET_BIT(var,pos)	((var) |= (1<<(pos)))
+#define SET_BIT(var,pos)	((var) |=  (1<<(pos)))
 #define CLEAR_BIT(var,pos)	((var) &= ~(1<<(pos)))
-#define CHECK_BIT(var,pos)	((var) & (1<<(pos)))
+#define CHECK_BIT(var,pos)	((var) &   (1<<(pos)))
 
 #define LOG_TAG "LifeNativeRuntime"
 #define LOGE(...)	__android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
@@ -40,7 +40,7 @@
 #define MIN_ALIVE_NEIGHBOURS	2
 #define MAX_ALIVE_NEIGHBOURS	3
 
-#define COLOR_ALIVE	0xFFFFFFFF
+#define COLOR_ALIVE	0xFF00FF00
 #define COLOR_DEAD	0xFF000000
 
 typedef uint8_t cell_t;
@@ -49,13 +49,6 @@ typedef cell_t* cbuf_t;
 
 #define SET_ALIVE(p, x)	SET_BIT(*(p), (x))
 #define SET_DEAD(p, x)	CLEAR_BIT(*(p), (x))
-#define IS_ALIVE(p, x) ((x)<0 ? \
-						CHECK_BIT(*((p) - 1 + (x) / BITS), BITS - ((-(x)) % BITS)) : \
-						((x)<8 ? CHECK_BIT(*(p),(x)) : \
-						CHECK_BIT(*((p) + (x) / BITS), (x) % BITS)))
-
-#define RET_OK com_chrulri_droidoflife_LifeRuntime_OK
-#define RET_NOMEMORY com_chrulri_droidoflife_LifeRuntime_NOMEMORY
 
 /* *** VARIABLES *** */
 static cbuf_t s_cbuf = 0;		// current cell buffer
@@ -67,16 +60,42 @@ static size_t s_worldsize = 0;	// world size: w*h
 
 /* *** UTILITIES *** */
 static inline void destroyRuntime() {
+	LOGD("destroyRuntime() called");
+
 	free(s_cbuf);
 	free(s_cbuf_s);
 	s_cbuf = s_cbuf_s = 0;
 	s_bufsize = s_worldsize = 0;
 	s_width = s_height = 0;
+
+	LOGD("destroyRuntime() exited");
+}
+
+static int isAlive(cbuf_t ptr, int x) {
+	LOGD("isAlive(%d, %d) called", ptr, x);
+	int t, poff, off;
+	if(x < 0) {
+		x = -x;
+		poff = -(x / BITS + 1);
+		off = BITS - (x % BITS);
+		LOGD(" x<0: off=%d, poff=%d", off, poff);
+		t = CHECK_BIT(*(ptr + poff), off);
+	} else if (x < 8) {
+		LOGD(" x<8: ---");
+		t = CHECK_BIT(*ptr, x);
+	} else {
+		poff = x / BITS;
+		off = x % BITS;
+		LOGD(" ---: off=%d, poff=%d", off, poff);
+		t = CHECK_BIT(*(ptr + poff), off);
+	}
+	LOGD("isAlive(%d) exited", t);
+	return t;
 }
 
 /* *** RUNTIME *** */
 jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED, jclass clazz UNUSED, jint width, jint height) {
-	LOGD("nRuntimeCreate(%d, %d)", width, height);
+	LOGD("nRuntimeCreate(%d, %d) called", width, height);
 
 	size_t x;
 
@@ -116,7 +135,8 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED,
 		*(cells++) = cell;
 	}
 
-	return RET_OK;
+	LOGD("nRuntimeCreate(..) exited");
+	return com_chrulri_droidoflife_LifeRuntime_OK;
 }
 
 void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED, jclass clazz UNUSED) {
@@ -136,42 +156,43 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED
 		alives = 0;
 
 		// CHECK NEIGHBOURS //
+		LOGD("-> check neighbours of %d", i);
 		left = i % s_width;		// index modulo stride -> 0 if most left element & if it's left most element, it cannot be the right most too
-		right = !left || ((i + 1) % s_width);	// index plus one modulo stride -> 0 if most right element (next one is left one of next row)
+		right = (left + 1) != s_width;	// next one is left one of next row
 		// left
-		if(left && IS_ALIVE(ptr, ci - 1))
+		if(left && isAlive(ptr, ci - 1))
 			alives++;
 		// right
-		if(right && IS_ALIVE(ptr, ci + 1))
+		if(right && isAlive(ptr, ci + 1))
 			alives++;
 		// upper row (index must not be less than stride)
 		if(i >= s_width) {
 			// upper
-			if(IS_ALIVE(ptr, ci - s_width))
+			if(isAlive(ptr, ci - s_width))
 				alives++;
 			// upper left
-			if(left && IS_ALIVE(ptr, ci - s_width - 1))
+			if(left && isAlive(ptr, ci - s_width - 1))
 				alives++;
 			// upper right
-			if(left && IS_ALIVE(ptr, ci - s_width + 1))
+			if(left && isAlive(ptr, ci - s_width + 1))
 				alives++;
 		}
 		// lower row (index must not be greater than buffer size minus stride)
 		if(s_worldsize - i > s_width) {
 			// lower
-			if(IS_ALIVE(ptr, ci + s_width))
+			if(isAlive(ptr, ci + s_width))
 				alives++;
 			// lower left
-			if(left && IS_ALIVE(ptr, ci + s_width - 1))
+			if(left && isAlive(ptr, ci + s_width - 1))
 				alives++;
 			// lower right
-			if(left && IS_ALIVE(ptr, ci + s_width + 1))
+			if(left && isAlive(ptr, ci + s_width + 1))
 				alives++;
 		}
 		// SET SUCCESSORS //
 		if(alives < MIN_ALIVE_NEIGHBOURS || alives > MAX_ALIVE_NEIGHBOURS) {
 			SET_DEAD(sptr, ci);
-		} else if(IS_ALIVE(ptr, ci) || alives == MAX_ALIVE_NEIGHBOURS) {
+		} else if(isAlive(ptr, ci) || alives == MAX_ALIVE_NEIGHBOURS) {
 			SET_ALIVE(sptr, ci);
 		} else {
 			SET_DEAD(sptr, ci);
@@ -200,6 +221,11 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy(JNIEnv *env UNUSED
 void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass clazz UNUSED, jobject bitmap) {
 	LOGD("nRuntimeBitmap(%d) called", bitmap);
 
+	if(!s_cbuf) {
+		LOGE("nRuntimeBitmap(..) exited without runtime!");
+		return;
+	}
+
 	AndroidBitmapInfo  info;
 	uint32_t          *pixels;
 	int                ret;
@@ -222,7 +248,7 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass
 	uint32_t *ptr = pixels;
 	uint i;
 	for(i = 0; i < s_worldsize; i++) {
-		*(ptr++) = IS_ALIVE(s_cbuf, i) ? COLOR_ALIVE : COLOR_DEAD;
+		*(ptr++) = isAlive(s_cbuf, i) ? COLOR_ALIVE : COLOR_DEAD;
 	}
 
 	if((ret = AndroidBitmap_unlockPixels(env, bitmap))) {
