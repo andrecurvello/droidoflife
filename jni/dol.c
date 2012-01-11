@@ -43,20 +43,19 @@
 #define COLOR_ALIVE	0xFFFFFFFF
 #define COLOR_DEAD	0xFF000000
 
-#define BITS	8
+typedef uint8_t cell_t;
+typedef cell_t* cbuf_t;
+#define BITS	(sizeof(cell_t)*8)
 
 #define SET_ALIVE(p, x)	SET_BIT(*(p), (x))
 #define SET_DEAD(p, x)	CLEAR_BIT(*(p), (x))
 #define IS_ALIVE(p, x) ((x)<0 ? \
-						CHECK_BIT(*((p) - 1 + ((x) / BITS)), BITS + ((x) % BITS)) : \
+						CHECK_BIT(*((p) - 1 + (x) / BITS), BITS - ((-(x)) % BITS)) : \
 						((x)<8 ? CHECK_BIT(*(p),(x)) : \
-						CHECK_BIT(*((p) + 1 + (x) / BITS), (x) % BITS)))
+						CHECK_BIT(*((p) + (x) / BITS), (x) % BITS)))
 
 #define RET_OK com_chrulri_droidoflife_LifeRuntime_OK
 #define RET_NOMEMORY com_chrulri_droidoflife_LifeRuntime_NOMEMORY
-
-typedef uint8_t cell_t;
-typedef cell_t* cbuf_t;
 
 /* *** VARIABLES *** */
 static cbuf_t s_cbuf = 0;		// current cell buffer
@@ -112,7 +111,7 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED,
 	while(x--) {
 		cell = 0;
 		for(i = 0; i < BITS; i++) {
-			cell |= (rand() % 10 == 0) << i;
+			cell |= (rand() % 5 == 0) << i;
 		}
 		*(cells++) = cell;
 	}
@@ -137,8 +136,8 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED
 		alives = 0;
 
 		// CHECK NEIGHBOURS //
-		left = i % s_width;		// index modulo stride -> 0 if most left element
-		right = (i + 1) % s_width;	// index plus one modulo stride -> 0 if most right element (next one is left one of next row)
+		left = i % s_width;		// index modulo stride -> 0 if most left element & if it's left most element, it cannot be the right most too
+		right = !left || ((i + 1) % s_width);	// index plus one modulo stride -> 0 if most right element (next one is left one of next row)
 		// left
 		if(left && IS_ALIVE(ptr, ci - 1))
 			alives++;
@@ -146,7 +145,7 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED
 		if(right && IS_ALIVE(ptr, ci + 1))
 			alives++;
 		// upper row (index must not be less than stride)
-		if(i > s_width) {
+		if(i >= s_width) {
 			// upper
 			if(IS_ALIVE(ptr, ci - s_width))
 				alives++;
