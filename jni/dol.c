@@ -1,268 +1,218 @@
 #include <jni.h>
 #include <android/log.h>
-
+#include <android/bitmap.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <pthread.h>
-
-#include <GLES/gl.h>
-#include <GLES/glext.h>
 
 #include "com_chrulri_droidoflife_LifeRuntime.h"
 
 #define UNUSED  __attribute__((unused))
 
-#define LOG_TAG "LifeNativeRuntime"
-#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define SET_BIT(var,pos)	((var) |= (1<<(pos)))
+#define CLEAR_BIT(var,pos)	((var) &= ~(1<<(pos)))
+#define CHECK_BIT(var,pos)	((var) & (1<<(pos)))
 
-#define RGB888TO565(r, g, b)  (((r>>3) << (5+6)) | ((g>>2) << 6) | (b>>3))
+#define LOG_TAG "LifeNativeRuntime"
+#define LOGE(...)	__android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#ifdef DEBUG
+#define LOGD(...)	__android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#else
+#define LOGD(...)	((void)0)
+#endif
 
 #define MIN_ALIVE_NEIGHBOURS	2
 #define MAX_ALIVE_NEIGHBOURS	3
 
-#define COLOR_ALIVE	RGB888TO565(0xA4,0xC6,0x39)				// Android hex code: #A4C639
-#define COLOR_DEAD	RGB888TO565(0x00,0x00,0x00)				// dead = black
+#define COLOR_ALIVE	0xFFFFFFFF
+#define COLOR_DEAD	0xFF000000
 
-#define IS_ALIVE(x)	(x == COLOR_ALIVE)
+#define BITS	8
+
+#define SET_ALIVE(p, x)	SET_BIT(*(p), (x))
+#define SET_DEAD(p, x)	CLEAR_BIT(*(p), (x))
+#define IS_ALIVE(p, x) ((x)<0 ? \
+						CHECK_BIT(*((p) - 1 + ((x) / BITS)), BITS + ((x) % BITS)) : \
+						((x)<8 ? CHECK_BIT(*(p),(x)) : \
+						CHECK_BIT(*((p) + 1 + (x) / BITS), (x) % BITS)))
 
 #define RET_OK com_chrulri_droidoflife_LifeRuntime_OK
 #define RET_NOMEMORY com_chrulri_droidoflife_LifeRuntime_NOMEMORY
 
-typedef uint16_t* pixbuf_t;
+typedef uint8_t cell_t;
+typedef cell_t* cbuf_t;
 
 /* *** VARIABLES *** */
-static size_t s_pixels_size = 0;// pixel buffer size
-static pixbuf_t s_pixels = 0;	// current pixel buffer
-static pixbuf_t s_pixelss = 0; // successor pixel buffer
-static pthread_mutex_t s_pixels_mutex;
-static GLuint s_texture = 0;
-static int s_life_w = 0;
-static int s_life_h = 0;
-static int s_scene_w = 0;
-static int s_scene_h = 0;
+static cbuf_t s_cbuf = 0;		// current cell buffer
+static cbuf_t s_cbuf_s = 0;		// successor cell buffer
+static int s_width = 0;			// world width
+static int s_height = 0;		// world height
+static size_t s_bufsize = 0;	// cell buffer size: w*h/sizeof(cbuf)
+static size_t s_worldsize = 0;	// world size: w*h
 
 /* *** UTILITIES *** */
-static void checkGLerror(const char* op) {
-	GLint error;
-	for (error = glGetError(); error; error = glGetError()) {
-		LOGE("after %s() glError (0x%x)", op, error);
-	}
-}
-
-static inline void lockPixels() {
-	int ret;
-	if((ret = pthread_mutex_lock(&s_pixels_mutex))) {
-		LOGE("phread_mutex_unlock failed (0x%x)", ret);
-	}
-}
-
-static inline void unlockPixels() {
-	int ret;
-	if((ret = pthread_mutex_unlock(&s_pixels_mutex))) {
-		LOGE("phread_mutex_unlock failed (0x%x)", ret);
-	}
-}
-
 static inline void destroyRuntime() {
-	free(s_pixels);
-	free(s_pixelss);
-	s_pixels = s_pixelss = 0;
-	s_pixels_size = 0;
-	s_life_w = s_life_h = 0;
-}
-
-/* *** INITIALIZATION *** */
-jint JNI_OnLoad(JavaVM *vm, void *reserved) {
-	LOGI("JNI_OnLoad(..) called");
-	int ret;
-
-	// initialize mutex
-	if((ret = pthread_mutex_init(&s_pixels_mutex, NULL))) {
-		LOGE("pthread_mutex_init failed (0x%x)", ret);
-	}
-
-	// go ahead..
-	return JNI_VERSION_1_6;
+	free(s_cbuf);
+	free(s_cbuf_s);
+	s_cbuf = s_cbuf_s = 0;
+	s_bufsize = s_worldsize = 0;
+	s_width = s_height = 0;
 }
 
 /* *** RUNTIME *** */
 jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED, jclass clazz UNUSED, jint width, jint height) {
-	LOGI("nRuntimeCreate(%d, %d)", width, height);
+	LOGD("nRuntimeCreate(%d, %d)", width, height);
+
+	size_t x;
 
 	// initialize random
 	srand ( time(NULL) );
 
-	lockPixels();
-
 	// initialize variables
-	s_life_w = width;
-	s_life_h = height;
+	s_width = width;
+	s_height = height;
+	s_worldsize = width * height;
+	x = s_worldsize % BITS == 0 ? 0 : 1;
+	s_bufsize = (s_worldsize / BITS) + x;
 
-	s_pixels_size = sizeof(s_pixels[0]) * s_life_w * s_life_h;
-
-	s_pixels = malloc(s_pixels_size);
-	if(!s_pixels) {
-		LOGE("s_pixels failed to malloc(%d)", s_pixels_size);
-		unlockPixels();
+	s_cbuf = malloc(s_bufsize);
+	if(!s_cbuf) {
+		LOGE("s_cbuf failed to malloc(%d)", s_bufsize);
 		destroyRuntime();
 		return errno;
 	}
-	s_pixelss = malloc(s_pixels_size);
-	if(!s_pixelss) {
-		LOGE("s_pixelss failed to malloc(%d)", s_pixels_size);
-		unlockPixels();
+	s_cbuf_s = malloc(s_bufsize);
+	if(!s_cbuf_s) {
+		LOGE("s_cbuf_s failed to malloc(%d)", s_bufsize);
 		destroyRuntime();
 		return errno;
 	}
 
 	// random start
-	int size = width*height;
-	pixbuf_t pixels = s_pixels;
-	while(size--) {
-		*(pixels++) = rand() % 3 == 0 ? COLOR_ALIVE : COLOR_DEAD;
+	cbuf_t cells = s_cbuf;
+	cell_t cell;
+	uint i;
+	x = s_bufsize;
+	while(x--) {
+		cell = 0;
+		for(i = 0; i < BITS; i++) {
+			cell |= (rand() % 10 == 0) << i;
+		}
+		*(cells++) = cell;
 	}
-
-	unlockPixels();
 
 	return RET_OK;
 }
 
 void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED, jclass clazz UNUSED) {
-	LOGI("nRuntimeIterate() called");
-
-	lockPixels();
+	LOGD("nRuntimeIterate() called");
 
 	/*** this is where the magic begins ***/
 
-	uint i, alives, left, right;
-	pixbuf_t ptr, sptr;
-	for(i = 0; i < s_pixels_size; i++) {
-		ptr = (pixbuf_t)(s_pixels + i);
-		sptr = (pixbuf_t)(s_pixelss + i);
+	uint i, bi, alives, left, right;
+	int ci; // must not be uint because of negative indexes
+	cbuf_t ptr, sptr;
+	for(i = 0; i < s_worldsize; i++) {
+		bi = i / BITS;	// buffer index
+		ci = i % BITS;	// cell index
+
+		ptr = (cbuf_t)(s_cbuf + bi);
+		sptr = (cbuf_t)(s_cbuf_s + bi);
 		alives = 0;
 
 		// CHECK NEIGHBOURS //
-		left = i % s_life_w;		// index modulo stride -> 0 if most left element
-		right = (i + 1) % s_life_w;	// index plus one modulo stride -> 0 if most right element (next one is left one of next row)
+		left = i % s_width;		// index modulo stride -> 0 if most left element
+		right = (i + 1) % s_width;	// index plus one modulo stride -> 0 if most right element (next one is left one of next row)
 		// left
-		if(left && IS_ALIVE(*(ptr - 1)))
+		if(left && IS_ALIVE(ptr, ci - 1))
 			alives++;
 		// right
-		if(right && IS_ALIVE(*(ptr + 1)))
+		if(right && IS_ALIVE(ptr, ci + 1))
 			alives++;
 		// upper row (index must not be less than stride)
-		if(i > s_life_w) {
+		if(i > s_width) {
 			// upper
-			if(IS_ALIVE(*(ptr - s_life_w)))
+			if(IS_ALIVE(ptr, ci - s_width))
 				alives++;
 			// upper left
-			if(left && IS_ALIVE(*(ptr - s_life_w - 1)))
+			if(left && IS_ALIVE(ptr, ci - s_width - 1))
 				alives++;
 			// upper right
-			if(left && IS_ALIVE(*(ptr - s_life_w + 1)))
+			if(left && IS_ALIVE(ptr, ci - s_width + 1))
 				alives++;
 		}
 		// lower row (index must not be greater than buffer size minus stride)
-		if(s_pixels_size - i > s_life_w) {
+		if(s_worldsize - i > s_width) {
 			// lower
-			if(IS_ALIVE(*(ptr + s_life_w)))
+			if(IS_ALIVE(ptr, ci + s_width))
 				alives++;
 			// lower left
-			if(left && IS_ALIVE(*(ptr + s_life_w - 1)))
+			if(left && IS_ALIVE(ptr, ci + s_width - 1))
 				alives++;
 			// lower right
-			if(left && IS_ALIVE(*(ptr + s_life_w + 1)))
+			if(left && IS_ALIVE(ptr, ci + s_width + 1))
 				alives++;
 		}
-		// CHECK SUCCESSORS //
+		// SET SUCCESSORS //
 		if(alives < MIN_ALIVE_NEIGHBOURS || alives > MAX_ALIVE_NEIGHBOURS) {
-			*sptr = COLOR_DEAD;
+			SET_DEAD(sptr, ci);
+		} else if(IS_ALIVE(ptr, ci) || alives == MAX_ALIVE_NEIGHBOURS) {
+			SET_ALIVE(sptr, ci);
 		} else {
-			*sptr = *ptr;
-			if(alives == MAX_ALIVE_NEIGHBOURS) {
-				*sptr = COLOR_ALIVE;
-			}
+			SET_DEAD(sptr, ci);
 		}
 	}
 
 	/*** the magic has happened, amen! ***/
 
-	// swap buffers, current pixel buffer is next successor buffer
-	ptr = s_pixels;
-	s_pixels = s_pixelss;
-	s_pixelss = ptr;
+	// swap buffers, current cell buffer is next successor cell buffer
+	ptr = s_cbuf;
+	s_cbuf = s_cbuf_s;
+	s_cbuf_s = ptr;
 
-	unlockPixels();
-
-	LOGI("nRuntimeIterate() exited");
+	LOGD("nRuntimeIterate() exited");
 }
 
 
 void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy(JNIEnv *env UNUSED, jclass clazz UNUSED) {
-	LOGI("nRuntimeDestroy() called");
-
-	lockPixels();
+	LOGD("nRuntimeDestroy() called");
 
 	destroyRuntime();
 
-	unlockPixels();
-
-	LOGI("nRuntimeDestroy() exited");
+	LOGD("nRuntimeDestroy() exited");
 }
 
-/* *** OPENGL *** */
-void Java_com_chrulri_droidoflife_LifeRuntime_nGLrender(JNIEnv *env UNUSED, jclass clazz UNUSED) {
-	LOGI("nGLrender() called");
+void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass clazz UNUSED, jobject bitmap) {
+	LOGD("nRuntimeBitmap(%d) called", bitmap);
 
-	// clear buffer
-	glClear(GL_COLOR_BUFFER_BIT);
+	AndroidBitmapInfo  info;
+	uint32_t          *pixels;
+	int                ret;
 
-	lockPixels();
-
-	LOGI("rendering w=%d, h=%d, ptr=%d, sw=%d, sh=%d", s_life_w, s_life_h, s_pixels, s_scene_w, s_scene_h);
-
-	if(s_pixels) {
-		// render pixels
-		glTexImage2D(
-			GL_TEXTURE_2D,	/* target */
-			0,				/* level */
-			GL_RGB,			/* internal format */
-			s_life_w,		/* width */
-			s_life_h,		/* height */
-			0,				/* border */
-			GL_RGB,			/* format */
-			GL_UNSIGNED_SHORT_5_6_5,/* type */
-			s_pixels);		/* pixels */
-		checkGLerror("glTexImage2D");
-		glDrawTexiOES(0, 0, 0, s_scene_w, s_scene_h);
-		checkGLerror("glDrawTexiOES");
+	if((ret = AndroidBitmap_getInfo(env, bitmap, &info))) {
+		LOGE("AndroidBitmap_getInfo(..) failed: 0x%x", ret);
+		return;
 	}
 
-	unlockPixels();
+	if(info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
+		LOGE("Bitmap format is not RGBA_8888!");
+		return;
+	}
 
-	LOGI("nGLrender() exited");
-}
+	if((ret = AndroidBitmap_lockPixels(env, bitmap, (void**)&pixels))) {
+		LOGE("AndroidBitmap_lockPixels(..) failed: 0x%x", ret);
+		return;
+	}
 
-void Java_com_chrulri_droidoflife_LifeRuntime_nGLresize(JNIEnv *env UNUSED, jclass clazz UNUSED, jint width, jint height) {
-	LOGI("nGLresize(%d, %d) called", width, height);
+	uint32_t *ptr = pixels;
+	uint i;
+	for(i = 0; i < s_worldsize; i++) {
+		*(ptr++) = IS_ALIVE(s_cbuf, i) ? COLOR_ALIVE : COLOR_DEAD;
+	}
 
-	s_scene_w = width;
-	s_scene_h = height;
+	if((ret = AndroidBitmap_unlockPixels(env, bitmap))) {
+		LOGE("AndroidBitmap_unlockPixels(..) failed: 0x%x", ret);
+		return;
+	}
 
-	glDeleteTextures(1, &s_texture);
-	glEnable(GL_TEXTURE_2D);
-	glGenTextures(1, &s_texture);
-	glBindTexture(GL_TEXTURE_2D, s_texture);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glShadeModel(GL_FLAT);
-	checkGLerror("glShadeModel");
-	glColor4x(0x10000, 0x10000, 0x10000, 0x10000);
-	checkGLerror("glColor4x");
-	int rect[4] = {0, 0, s_life_w, s_life_h};
-	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_CROP_RECT_OES, rect);
-	checkGLerror("glTexParameteriv");
-
-	LOGI("nGLresize(..) exited");
+	LOGD("nRuntimeBitmap(..) exited");
 }

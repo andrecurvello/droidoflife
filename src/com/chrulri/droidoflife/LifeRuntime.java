@@ -1,5 +1,7 @@
 package com.chrulri.droidoflife;
 
+import android.graphics.Bitmap;
+
 
 /**
  * Droid of Life - Native Worker Class
@@ -22,11 +24,7 @@ final class LifeRuntime {
 	
 	private static native void nRuntimeDestroy();
 	
-	/* ************************************************************************************************************* */
-	
-	private static native void nGLrender();
-	
-	private static native void nGLresize(int width, int heigth);
+	private static native void nRuntimeBitmap(Bitmap bmp);
 
 	/* ************************************************************************************************************* */
 
@@ -72,6 +70,13 @@ final class LifeRuntime {
 	}
 
 	/**
+	 * tell native runtime to render the scene
+	 */
+	public static void render(Bitmap bmp) {
+		nRuntimeBitmap(bmp);
+	}
+
+	/**
 	 * destroy that beautiful place of life
 	 * 
 	 * @throws IllegalAccessException if runtime is not initialized yet
@@ -89,22 +94,6 @@ final class LifeRuntime {
 		if (runtime == null) {
 			throw new IllegalAccessException("runtime is not initialized yet");
 		}
-	}
-
-	/* ************************************************************************************************************* */
-	
-	/**
-	 * tell native runtime to render the scene
-	 */
-	public static void render() {
-		nGLrender();
-	}
-
-	/** 
-	 * tell native runtime to resize the scene
-	 */
-	public static void resize(int width, int height) {
-		nGLresize(width, height);
 	}
 
 	/* ************************************************************************************************************* */

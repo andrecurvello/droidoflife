@@ -37,19 +37,11 @@ JNIEXPORT void JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy
 
 /*
  * Class:     com_chrulri_droidoflife_LifeRuntime
- * Method:    nGLrender
- * Signature: ()V
+ * Method:    nRuntimeBitmap
+ * Signature: (Landroid/graphics/Bitmap;)V
  */
-JNIEXPORT void JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nGLrender
-  (JNIEnv *, jclass);
-
-/*
- * Class:     com_chrulri_droidoflife_LifeRuntime
- * Method:    nGLresize
- * Signature: (II)V
- */
-JNIEXPORT void JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nGLresize
-  (JNIEnv *, jclass, jint, jint);
+JNIEXPORT void JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap
+  (JNIEnv *, jclass, jobject);
 
 #ifdef __cplusplus
 }

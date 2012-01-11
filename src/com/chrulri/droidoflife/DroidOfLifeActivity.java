@@ -1,11 +1,16 @@
 package com.chrulri.droidoflife;
 
 import android.app.Activity;
-import android.opengl.GLSurfaceView;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.util.Log;
-import android.view.KeyEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
@@ -18,7 +23,8 @@ public class DroidOfLifeActivity extends Activity {
 	static final long ITERATION_DELAY_MS = 100;
 
 	private IterationTask iterationTask;
-	private GLSurfaceView glView;
+	private SurfaceView view;
+	private Bitmap bitmap;
 
 	private void refreshTitle() {
 		String title = "" + getText(R.string.app_name);
@@ -31,8 +37,18 @@ public class DroidOfLifeActivity extends Activity {
 		if (iterationTask != null) {
 			title += " - " + getText(R.string.auto_short);
 		}
-
 		setTitle(title);
+	}
+	
+	private void doRender() {
+		Canvas canvas = view.getHolder().lockCanvas();
+
+		LifeRuntime.render(bitmap);
+
+		Rect dst = new Rect(0, 0, view.getWidth(), view.getHeight());
+		canvas.drawBitmap(bitmap, null, dst, null);
+
+		view.getHolder().unlockCanvasAndPost(canvas);
 	}
 
 	@Override
@@ -40,8 +56,8 @@ public class DroidOfLifeActivity extends Activity {
 		super.onCreate(savedInstanceState);
 
 		// TODO ask for width/height
-		final int width = 32;
-		final int height = 32;
+		final int width = 200;
+		final int height = 100;
 
 		try {
 			LifeRuntime.create(width, height);
@@ -53,11 +69,8 @@ public class DroidOfLifeActivity extends Activity {
 			finish();
 			return;
 		}
-		glView = new GLSurfaceView(this);
-		glView.setRenderer(new LifeRenderer());
-		glView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-
-		glView.setOnLongClickListener(new OnLongClickListener() {
+		view = new SurfaceView(this);
+		view.setOnLongClickListener(new OnLongClickListener() {
 			@Override
 			public boolean onLongClick(View v) {
 				if (iterationTask == null) {
@@ -71,8 +84,7 @@ public class DroidOfLifeActivity extends Activity {
 				return true;
 			}
 		});
-
-		glView.setOnClickListener(new OnClickListener() {
+		view.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				// disable iteration task for manual mode
@@ -83,7 +95,7 @@ public class DroidOfLifeActivity extends Activity {
 					// manual iteration
 					try {
 						LifeRuntime.iterate();
-						glView.requestRender();
+						doRender();
 					} catch (IllegalAccessException e) {
 						Log.e(TAG, "ManualMode", e);
 					}
@@ -91,8 +103,28 @@ public class DroidOfLifeActivity extends Activity {
 				refreshTitle();
 			}
 		});
+		view.getHolder().addCallback(new SurfaceHolder.Callback() {
+			@Override
+			public void surfaceChanged(SurfaceHolder holder, int format,
+					int width, int height) {
+				doRender();
+			}
 
-		setContentView(glView);
+			@Override
+			public void surfaceCreated(SurfaceHolder holder) {
+				doRender();
+			}
+
+			@Override
+			public void surfaceDestroyed(SurfaceHolder holder) {
+				// ignore
+			}
+			
+		});
+
+		bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		
+		setContentView(view);
 
 		refreshTitle();
 
@@ -124,7 +156,8 @@ public class DroidOfLifeActivity extends Activity {
 		super.onDestroy();
 		// remove iteration task
 		iterationTask = null;
-		glView = null;
+		view = null;
+		bitmap = null;
 		// destroy life with a nuclear bomb (!!)
 		try {
 			LifeRuntime.destroy();
@@ -133,18 +166,8 @@ public class DroidOfLifeActivity extends Activity {
 		}
 	}
 
-	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		// exit on back
-		if(keyCode == KeyEvent.KEYCODE_BACK) {
-			finish();
-			return true;
-		}
-		return onKeyDown(keyCode, event);
-	}
-
 	class IterationTask extends AsyncTask<Void, Void, Void> {
-
+		
 		@Override
 		protected void onProgressUpdate(Void... values) {
 			refreshTitle();
@@ -152,25 +175,32 @@ public class DroidOfLifeActivity extends Activity {
 
 		@Override
 		protected Void doInBackground(Void... params) {
-			while (!isCancelled()) {
-				// new generation ready, hurray!
-				try {
-					LifeRuntime.iterate();
-					glView.requestRender();
-					// tell everyone
-					publishProgress();
-				} catch (IllegalAccessException e) {
-					Log.e(TAG, "IterationTask", e);
-					return null;
+			PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+			PowerManager.WakeLock wakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
+			wakeLock.acquire();
+			try {
+				while (!isCancelled()) {
+					// new generation ready, hurray!
+					try {
+						LifeRuntime.iterate();
+						doRender();
+						// tell everyone
+						publishProgress();
+					} catch (IllegalAccessException e) {
+						Log.e(TAG, "IterationTask", e);
+						return null;
+					}
+					// sleep for next generation
+					try {
+						Thread.sleep(ITERATION_DELAY_MS);
+					} catch (InterruptedException e) {
+						// ignore
+					}
 				}
-				// sleep for next generation
-				try {
-					Thread.sleep(ITERATION_DELAY_MS);
-				} catch (InterruptedException e) {
-					// ignore
-				}
+				return null;
+			} finally {
+				wakeLock.release();
 			}
-			return null;
 		}
 	}
 }
