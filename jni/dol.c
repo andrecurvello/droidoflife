@@ -20,6 +20,7 @@
 #include <android/bitmap.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "com_chrulri_droidoflife_LifeRuntime.h"
 
@@ -52,6 +53,7 @@ typedef cell_t* cbuf_t;
 #define BITS	(sizeof(cell_t)*8)
 
 /* *** VARIABLES *** */
+static pthread_mutex_t s_mutex;
 static cbuf_t s_cbuf = 0;		// current cell buffer
 static cbuf_t s_cbuf_s = 0;		// successor cell buffer
 static cbuf_t s_cbuf_l = 0;     // life state cell buffer (bit set = has just been born / died)
@@ -61,6 +63,20 @@ static size_t s_bufsize = 0;	// cell buffer size: w*h/sizeof(cbuf)
 static size_t s_worldsize = 0;	// world size: w*h
 
 /* *** UTILITIES *** */
+static inline void lockRuntime() {
+	int ret;
+	if((ret = pthread_mutex_lock(&s_mutex))) {
+		LOGE("phread_mutex_lock failed (0x%x)", ret);
+	}
+}
+
+static inline void unlockRuntime() {
+	int ret;
+	if((ret = pthread_mutex_unlock(&s_mutex))) {
+		LOGE("phread_mutex_unlock failed (0x%x)", ret);
+	}
+}
+
 static inline void destroyRuntime() {
 	LOGD("destroyRuntime() called");
 
@@ -100,6 +116,8 @@ static uint isBitSet(cbuf_t ptr, int offset) {
 jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED, jclass clazz UNUSED, jint width, jint height) {
 	LOGD("nRuntimeCreate(%d, %d) called", width, height);
 
+	lockRuntime();
+
 	size_t x;
 
 	// initialize random
@@ -116,18 +134,21 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED,
 	if(!s_cbuf) {
 		LOGE("s_cbuf failed to malloc(%d)", s_bufsize);
 		destroyRuntime();
+		unlockRuntime();
 		return errno;
 	}
 	s_cbuf_s = malloc(s_bufsize);
 	if(!s_cbuf_s) {
 		LOGE("s_cbuf_s failed to malloc(%d)", s_bufsize);
 		destroyRuntime();
+		unlockRuntime();
 		return errno;
 	}
 	s_cbuf_l = malloc(s_bufsize);
 	if(!s_cbuf_l) {
 		LOGE("s_cbuf_l failed to malloc(%d)", s_bufsize);
 		destroyRuntime();
+		unlockRuntime();
 		return errno;
 	}
 
@@ -145,12 +166,16 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED,
 	}
 	memset(s_cbuf_l, 0xFF, s_bufsize);
 
+	unlockRuntime();
+
 	LOGD("nRuntimeCreate(..) exited");
 	return com_chrulri_droidoflife_LifeRuntime_OK;
 }
 
 void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED, jclass clazz UNUSED) {
 	LOGD("nRuntimeIterate() called");
+
+	lockRuntime();
 
 	/*** this is where the magic begins ***/
 
@@ -224,6 +249,8 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED
 	s_cbuf_s = ptr;
 	// life state buffer remains the same
 
+	unlockRuntime();
+
 	LOGD("nRuntimeIterate() exited");
 }
 
@@ -231,7 +258,11 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED
 void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy(JNIEnv *env UNUSED, jclass clazz UNUSED) {
 	LOGD("nRuntimeDestroy() called");
 
+	lockRuntime();
+
 	destroyRuntime();
+
+	unlockRuntime();
 
 	LOGD("nRuntimeDestroy() exited");
 }
@@ -239,8 +270,11 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy(JNIEnv *env UNUSED
 void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass clazz UNUSED, jobject bitmap) {
 	LOGD("nRuntimeBitmap(%d) called", bitmap);
 
+	lockRuntime();
+
 	if(!s_cbuf) {
 		LOGE("nRuntimeBitmap(..) exited without runtime!");
+		unlockRuntime();
 		return;
 	}
 
@@ -253,16 +287,19 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass
 
 	if((ret = AndroidBitmap_getInfo(env, bitmap, &info))) {
 		LOGE("AndroidBitmap_getInfo(..) failed: 0x%x", ret);
+		unlockRuntime();
 		return;
 	}
 
 	if(info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
 		LOGE("Bitmap format is not RGBA_8888!");
+		unlockRuntime();
 		return;
 	}
 
 	if((ret = AndroidBitmap_lockPixels(env, bitmap, (void**)&pixels))) {
 		LOGE("AndroidBitmap_lockPixels(..) failed: 0x%x", ret);
+		unlockRuntime();
 		return;
 	}
 
@@ -277,8 +314,11 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass
 
 	if((ret = AndroidBitmap_unlockPixels(env, bitmap))) {
 		LOGE("AndroidBitmap_unlockPixels(..) failed: 0x%x", ret);
+		unlockRuntime();
 		return;
 	}
+
+	unlockRuntime();
 
 	LOGD("nRuntimeBitmap(..) exited");
 }
