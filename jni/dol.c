@@ -23,6 +23,8 @@
 
 #include "com_chrulri_droidoflife_LifeRuntime.h"
 
+//#define DEBUG
+
 #define UNUSED  __attribute__((unused))
 
 #define SET_BIT(var,pos)	((var) |=  (1<<(pos)))
@@ -41,18 +43,18 @@
 #define MAX_ALIVE_NEIGHBOURS	3
 
 #define COLOR_ALIVE	0xFF00FF00
+#define COLOR_BORN	0xFF008800
 #define COLOR_DEAD	0xFF000000
+#define COLOR_DIED	0xFF888888
 
 typedef uint8_t cell_t;
 typedef cell_t* cbuf_t;
 #define BITS	(sizeof(cell_t)*8)
 
-#define SET_ALIVE(p, x)	SET_BIT(*(p), (x))
-#define SET_DEAD(p, x)	CLEAR_BIT(*(p), (x))
-
 /* *** VARIABLES *** */
 static cbuf_t s_cbuf = 0;		// current cell buffer
 static cbuf_t s_cbuf_s = 0;		// successor cell buffer
+static cbuf_t s_cbuf_l = 0;     // life state cell buffer (bit set = has just been born / died)
 static int s_width = 0;			// world width
 static int s_height = 0;		// world height
 static size_t s_bufsize = 0;	// cell buffer size: w*h/sizeof(cbuf)
@@ -64,32 +66,33 @@ static inline void destroyRuntime() {
 
 	free(s_cbuf);
 	free(s_cbuf_s);
-	s_cbuf = s_cbuf_s = 0;
+	free(s_cbuf_l);
+	s_cbuf = s_cbuf_s = s_cbuf_l = 0;
 	s_bufsize = s_worldsize = 0;
 	s_width = s_height = 0;
 
 	LOGD("destroyRuntime() exited");
 }
 
-static int isAlive(cbuf_t ptr, int x) {
-	LOGD("isAlive(%d, %d) called", ptr, x);
+static uint isBitSet(cbuf_t ptr, int offset) {
+//	LOGD("isBitSet(%d, %d) called", ptr, offset);
 	int t, poff, off;
-	if(x < 0) {
-		x = -x;
-		poff = -(x / BITS + 1);
-		off = BITS - (x % BITS);
-		LOGD(" x<0: off=%d, poff=%d", off, poff);
+	if(offset < 0) {
+		offset = -offset;
+		poff = -(offset / BITS + 1);
+		off = BITS - (offset % BITS);
+//		LOGD(" offset<0: off=%d, poff=%d", off, poff);
 		t = CHECK_BIT(*(ptr + poff), off);
-	} else if (x < 8) {
-		LOGD(" x<8: ---");
-		t = CHECK_BIT(*ptr, x);
+	} else if (offset < 8) {
+//		LOGD(" offset<8: ---");
+		t = CHECK_BIT(*ptr, offset);
 	} else {
-		poff = x / BITS;
-		off = x % BITS;
-		LOGD(" ---: off=%d, poff=%d", off, poff);
+		poff = offset / BITS;
+		off = offset % BITS;
+//		LOGD(" ---: off=%d, poff=%d", off, poff);
 		t = CHECK_BIT(*(ptr + poff), off);
 	}
-	LOGD("isAlive(%d) exited", t);
+//	LOGD("isBitSet(%d) exited", t);
 	return t;
 }
 
@@ -121,6 +124,12 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED,
 		destroyRuntime();
 		return errno;
 	}
+	s_cbuf_l = malloc(s_bufsize);
+	if(!s_cbuf_l) {
+		LOGE("s_cbuf_l failed to malloc(%d)", s_bufsize);
+		destroyRuntime();
+		return errno;
+	}
 
 	// random start
 	cbuf_t cells = s_cbuf;
@@ -134,6 +143,7 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED,
 		}
 		*(cells++) = cell;
 	}
+	memset(s_cbuf_l, 0xFF, s_bufsize);
 
 	LOGD("nRuntimeCreate(..) exited");
 	return com_chrulri_droidoflife_LifeRuntime_OK;
@@ -144,58 +154,65 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED
 
 	/*** this is where the magic begins ***/
 
-	uint i, bi, alives, left, right;
+	memset(s_cbuf_s, 0, s_bufsize); // reset successor buffer
+	memset(s_cbuf_l, 0, s_bufsize); // reset life state buffer
+	uint i, bi, alives, left, right, current;
 	int ci; // must not be uint because of negative indexes
-	cbuf_t ptr, sptr;
+	cbuf_t ptr, sptr, lptr;
 	for(i = 0; i < s_worldsize; i++) {
 		bi = i / BITS;	// buffer index
 		ci = i % BITS;	// cell index
 
 		ptr = (cbuf_t)(s_cbuf + bi);
 		sptr = (cbuf_t)(s_cbuf_s + bi);
+		lptr = (cbuf_t)(s_cbuf_l + bi);
 		alives = 0;
+		current = isBitSet(ptr, ci);
 
 		// CHECK NEIGHBOURS //
 		LOGD("-> check neighbours of %d", i);
 		left = i % s_width;		// index modulo stride -> 0 if most left element & if it's left most element, it cannot be the right most too
 		right = (left + 1) != s_width;	// next one is left one of next row
 		// left
-		if(left && isAlive(ptr, ci - 1))
+		if(left && isBitSet(ptr, ci - 1))
 			alives++;
 		// right
-		if(right && isAlive(ptr, ci + 1))
+		if(right && isBitSet(ptr, ci + 1))
 			alives++;
 		// upper row (index must not be less than stride)
 		if(i >= s_width) {
 			// upper
-			if(isAlive(ptr, ci - s_width))
+			if(isBitSet(ptr, ci - s_width))
 				alives++;
 			// upper left
-			if(left && isAlive(ptr, ci - s_width - 1))
+			if(left && isBitSet(ptr, ci - s_width - 1))
 				alives++;
 			// upper right
-			if(left && isAlive(ptr, ci - s_width + 1))
+			if(left && isBitSet(ptr, ci - s_width + 1))
 				alives++;
 		}
 		// lower row (index must not be greater than buffer size minus stride)
 		if(s_worldsize - i > s_width) {
 			// lower
-			if(isAlive(ptr, ci + s_width))
+			if(isBitSet(ptr, ci + s_width))
 				alives++;
 			// lower left
-			if(left && isAlive(ptr, ci + s_width - 1))
+			if(left && isBitSet(ptr, ci + s_width - 1))
 				alives++;
 			// lower right
-			if(left && isAlive(ptr, ci + s_width + 1))
+			if(left && isBitSet(ptr, ci + s_width + 1))
 				alives++;
 		}
 		// SET SUCCESSORS //
 		if(alives < MIN_ALIVE_NEIGHBOURS || alives > MAX_ALIVE_NEIGHBOURS) {
-			SET_DEAD(sptr, ci);
-		} else if(isAlive(ptr, ci) || alives == MAX_ALIVE_NEIGHBOURS) {
-			SET_ALIVE(sptr, ci);
-		} else {
-			SET_DEAD(sptr, ci);
+			if(current) {
+				SET_BIT(*lptr, ci);
+			}
+		} else if(current) {
+			SET_BIT(*sptr, ci);
+		} else if (alives == MAX_ALIVE_NEIGHBOURS) {
+			SET_BIT(*sptr, ci);
+			SET_BIT(*lptr, ci);
 		}
 	}
 
@@ -205,6 +222,7 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeIterate(JNIEnv *env UNUSED
 	ptr = s_cbuf;
 	s_cbuf = s_cbuf_s;
 	s_cbuf_s = ptr;
+	// life state buffer remains the same
 
 	LOGD("nRuntimeIterate() exited");
 }
@@ -226,6 +244,9 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass
 		return;
 	}
 
+	// render settings
+	uint enableBornDeath = 1; // TODO read user settings
+
 	AndroidBitmapInfo  info;
 	uint32_t          *pixels;
 	int                ret;
@@ -246,9 +267,12 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass
 	}
 
 	uint32_t *ptr = pixels;
-	uint i;
+	uint i, b;
 	for(i = 0; i < s_worldsize; i++) {
-		*(ptr++) = isAlive(s_cbuf, i) ? COLOR_ALIVE : COLOR_DEAD;
+		b = enableBornDeath ? isBitSet(s_cbuf_l, i) : 0;
+		*(ptr++) = isBitSet(s_cbuf, i) ?
+				(b ? COLOR_BORN : COLOR_ALIVE) :
+				(b ? COLOR_DIED : COLOR_DEAD);
 	}
 
 	if((ret = AndroidBitmap_unlockPixels(env, bitmap))) {
