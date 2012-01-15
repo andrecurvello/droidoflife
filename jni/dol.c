@@ -164,7 +164,7 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED,
 		}
 		*(cells++) = cell;
 	}
-	memset(s_cbuf_l, 0xFF, s_bufsize);
+	memset(s_cbuf_l, 0, s_bufsize);
 
 	unlockRuntime();
 
