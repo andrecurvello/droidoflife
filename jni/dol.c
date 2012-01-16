@@ -115,8 +115,14 @@ static inline uint isBitSet(cbuf_t ptr, int offset) {
 /* *** INITIALIZATION *** */
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 	LOGD("JNI_OnLoad(..) called");
+	int ret;
 
 	srand(time(NULL));
+
+	// initialize mutex
+	if((ret = pthread_mutex_init(&s_mutex, NULL))) {
+		LOGE("pthread_mutex_init failed (0x%x)", ret);
+	}
 
 	// go ahead..
 	return JNI_VERSION_1_6;
