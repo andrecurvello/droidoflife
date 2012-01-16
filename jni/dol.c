@@ -90,7 +90,7 @@ static inline void destroyRuntime() {
 	LOGD("destroyRuntime() exited");
 }
 
-static uint isBitSet(cbuf_t ptr, int offset) {
+static inline uint isBitSet(cbuf_t ptr, int offset) {
 //	LOGD("isBitSet(%d, %d) called", ptr, offset);
 	int t, poff, off;
 	if(offset < 0) {
@@ -112,23 +112,33 @@ static uint isBitSet(cbuf_t ptr, int offset) {
 	return t;
 }
 
+/* *** INITIALIZATION *** */
+jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+	LOGD("JNI_OnLoad(..) called");
+
+	srand(time(NULL));
+
+	// go ahead..
+	return JNI_VERSION_1_6;
+}
+
 /* *** RUNTIME *** */
 jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED, jclass clazz UNUSED, jint width, jint height) {
 	LOGD("nRuntimeCreate(%d, %d) called", width, height);
 
 	lockRuntime();
 
-	size_t x;
-
-	// initialize random
-	srand ( time(NULL) );
+	if(width <= 0 || height <= 0) {
+		LOGE("%dx%d is an invalid size for a living room", width, height);
+		unlockRuntime();
+		return com_chrulri_droidoflife_LifeRuntime_E_INVALID_SIZE;
+	}
 
 	// initialize variables
 	s_width = width;
 	s_height = height;
 	s_worldsize = width * height;
-	x = s_worldsize % BITS == 0 ? 0 : 1;
-	s_bufsize = (s_worldsize / BITS) + x;
+	s_bufsize = (s_worldsize / BITS) + (s_worldsize % BITS == 0 ? 0 : 1);
 
 	s_cbuf = malloc(s_bufsize);
 	if(!s_cbuf) {
@@ -156,7 +166,7 @@ jint Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeCreate(JNIEnv *env UNUSED,
 	cbuf_t cells = s_cbuf;
 	cell_t cell;
 	uint i;
-	x = s_bufsize;
+	size_t x = s_bufsize;
 	while(x--) {
 		cell = 0;
 		for(i = 0; i < BITS; i++) {

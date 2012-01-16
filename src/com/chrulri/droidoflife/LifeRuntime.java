@@ -29,6 +29,7 @@ final class LifeRuntime {
 	/* ************************************************************************************************************* */
 	
 	static final int OK = 0;
+	static final int E_INVALID_SIZE = 1;
 
 	static {
 		System.loadLibrary("dol");
