@@ -35,13 +35,13 @@ import android.view.View.OnLongClickListener;
 
 import com.chrulri.droidoflife.LifeRuntime.LifeRuntimeException;
 
-public class DroidOfLifeActivity extends Activity {
-	static final String TAG = DroidOfLifeActivity.class.getSimpleName();
+public class MainActivity extends Activity {
+	static final String TAG = MainActivity.class.getSimpleName();
 
 	static final long ITERATION_DELAY_MS = 100;
 
 	private IterationTask iterationTask;
-	private SurfaceView view;
+	private SurfaceHolder surface;
 	private Bitmap bitmap;
 
 	private void refreshTitle() {
@@ -84,23 +84,26 @@ public class DroidOfLifeActivity extends Activity {
 	}
 
 	private void doRender() {
-		Canvas canvas = view.getHolder().lockCanvas();
+		Canvas canvas = surface.lockCanvas();
 
 		LifeRuntime.render(bitmap);
 
-		Rect dst = new Rect(0, 0, view.getWidth(), view.getHeight());
+		Rect dst = surface.getSurfaceFrame();
 		canvas.drawBitmap(bitmap, null, dst, null);
 
-		view.getHolder().unlockCanvasAndPost(canvas);
+		surface.unlockCanvasAndPost(canvas);
 	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.main);
+
+		SurfaceView view = (SurfaceView) findViewById(R.id.main_surfaceView);
+		surface = view.getHolder();
 
 		restartRuntime();
 
-		view = new SurfaceView(this);
 		view.setOnLongClickListener(new OnLongClickListener() {
 			@Override
 			public boolean onLongClick(View v) {
@@ -134,7 +137,7 @@ public class DroidOfLifeActivity extends Activity {
 				refreshTitle();
 			}
 		});
-		view.getHolder().addCallback(new SurfaceHolder.Callback() {
+		surface.addCallback(new SurfaceHolder.Callback() {
 			@Override
 			public void surfaceChanged(SurfaceHolder holder, int format,
 					int width, int height) {
@@ -152,8 +155,6 @@ public class DroidOfLifeActivity extends Activity {
 			}
 			
 		});
-		
-		setContentView(view);
 
 		refreshTitle();
 
@@ -185,7 +186,7 @@ public class DroidOfLifeActivity extends Activity {
 		super.onDestroy();
 		// remove iteration task
 		iterationTask = null;
-		view = null;
+		surface = null;
 		bitmap = null;
 		// destroy life with a nuclear bomb (!!)
 		LifeRuntime.destroy();
