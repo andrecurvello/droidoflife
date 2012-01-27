@@ -18,18 +18,18 @@
 package com.chrulri.droidoflife;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.Menu;
 import android.support.v4.view.MenuItem;
-import android.support.v4.view.MenuItem.OnMenuItemClickListener;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -188,51 +188,46 @@ public class MainActivity extends FragmentActivity {
 	}
 
 	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		switch(keyCode) {
-		case KeyEvent.KEYCODE_MENU:
-			doIteration();
-			return true;
-		}
-		return super.onKeyDown(keyCode, event);
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.main, menu);
+		return super.onCreateOptionsMenu(menu);
 	}
 
 	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// automatic mode menu
-		menu.add(R.string.automatic)
-			.setIcon(R.drawable.ic_action_refresh)
-			.setOnMenuItemClickListener(new OnMenuItemClickListener() {
-				@Override
-				public boolean onMenuItemClick(MenuItem item) {
-					if (iterationTask == null) {
-						iterationTask = new IterationTask();
-						iterationTask.execute();
-					} else {
-						iterationTask.cancel(false);
-						iterationTask = null;
-					}
-					refreshTitle();
-					return true;
-				}
-			})
-			.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-
-		// restart menu
-		menu.add(R.string.restart)
-			.setIcon(R.drawable.ic_action_delete)
-			.setOnMenuItemClickListener(new OnMenuItemClickListener() {
-				@Override
-				public boolean onMenuItemClick(MenuItem item) {
-					// restart game of life
-					restartRuntime();
-					doRender();
-					return true;
-				}
-			})
-			.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-
-		return super.onCreateOptionsMenu(menu);
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch(item.getItemId()) {
+		case R.id.mi_automatic:
+			// toggle automatic mode
+			if (iterationTask == null) {
+				iterationTask = new IterationTask();
+				iterationTask.execute();
+			} else {
+				iterationTask.cancel(false);
+				iterationTask = null;
+			}
+			refreshTitle();
+			return true;
+		case R.id.mi_restart:
+			// restart game of life
+			restartRuntime();
+			doRender();
+			return true;
+		case R.id.mi_settings:
+			// open settings activity
+			startActivity(new Intent(this, SettingsActivity.class));
+			return true;
+		case R.id.mi_help:
+			// open help dialog
+			DialogFragment help = new HelpDialogFragment();
+			help.show(getSupportFragmentManager(), null);
+			return true;
+		case R.id.mi_about:
+			// open about dialog
+			DialogFragment about = new AboutDialogFragment();
+			about.show(getSupportFragmentManager(), null);
+			return true;
+		}
+		return super.onOptionsItemSelected(item);
 	}
 
 	class IterationTask extends AsyncTask<Void, Void, Void> {
