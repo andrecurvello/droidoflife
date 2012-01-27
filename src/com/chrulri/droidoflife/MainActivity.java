@@ -17,7 +17,6 @@
  ******************************************************************************/
 package com.chrulri.droidoflife;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -25,17 +24,20 @@ import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.Menu;
+import android.support.v4.view.MenuItem;
+import android.support.v4.view.MenuItem.OnMenuItemClickListener;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnLongClickListener;
 
 import com.chrulri.droidoflife.LifeRuntime.LifeRuntimeException;
 
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity {
 	static final String TAG = MainActivity.class.getSimpleName();
 
 	static final long ITERATION_DELAY_MS = 100;
@@ -83,6 +85,17 @@ public class MainActivity extends Activity {
 		refreshTitle();
 	}
 
+	private boolean doIteration() {
+		try {
+			LifeRuntime.iterate();
+			doRender();
+		} catch (IllegalAccessException e) {
+			Log.e(TAG, "error on iteration", e);
+			return false;
+		}
+		return true;
+	}
+
 	private void doRender() {
 		Canvas canvas = surface.lockCanvas();
 
@@ -99,25 +112,13 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 
+		getSupportActionBar().setDisplayShowHomeEnabled(false);
+
 		SurfaceView view = (SurfaceView) findViewById(R.id.main_surfaceView);
 		surface = view.getHolder();
 
 		restartRuntime();
 
-		view.setOnLongClickListener(new OnLongClickListener() {
-			@Override
-			public boolean onLongClick(View v) {
-				if (iterationTask == null) {
-					iterationTask = new IterationTask();
-					iterationTask.execute();
-				} else {
-					iterationTask.cancel(false);
-					iterationTask = null;
-				}
-				refreshTitle();
-				return true;
-			}
-		});
 		view.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -126,13 +127,7 @@ public class MainActivity extends Activity {
 					iterationTask.cancel(false);
 					iterationTask = null;
 				} else {
-					// manual iteration
-					try {
-						LifeRuntime.iterate();
-						doRender();
-					} catch (IllegalAccessException e) {
-						Log.e(TAG, "ManualMode", e);
-					}
+					doIteration();
 				}
 				refreshTitle();
 			}
@@ -195,15 +190,49 @@ public class MainActivity extends Activity {
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		switch(keyCode) {
-		case KeyEvent.KEYCODE_BACK:
-			finish();
-			return true;
 		case KeyEvent.KEYCODE_MENU:
-			restartRuntime();
-			doRender();
+			doIteration();
 			return true;
 		}
 		return super.onKeyDown(keyCode, event);
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// automatic mode menu
+		menu.add(R.string.automatic)
+			.setIcon(R.drawable.ic_action_refresh)
+			.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+				@Override
+				public boolean onMenuItemClick(MenuItem item) {
+					if (iterationTask == null) {
+						iterationTask = new IterationTask();
+						iterationTask.execute();
+					} else {
+						iterationTask.cancel(false);
+						iterationTask = null;
+					}
+					refreshTitle();
+					return true;
+				}
+			})
+			.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+
+		// restart menu
+		menu.add(R.string.restart)
+			.setIcon(R.drawable.ic_action_delete)
+			.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+				@Override
+				public boolean onMenuItemClick(MenuItem item) {
+					// restart game of life
+					restartRuntime();
+					doRender();
+					return true;
+				}
+			})
+			.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+
+		return super.onCreateOptionsMenu(menu);
 	}
 
 	class IterationTask extends AsyncTask<Void, Void, Void> {
@@ -221,15 +250,12 @@ public class MainActivity extends Activity {
 			try {
 				while (!isCancelled()) {
 					// new generation ready, hurray!
-					try {
-						LifeRuntime.iterate();
-						doRender();
-						// tell everyone
-						publishProgress();
-					} catch (IllegalAccessException e) {
-						Log.e(TAG, "IterationTask", e);
+					if(!doIteration()) {
+						// exit on error
 						return null;
 					}
+					// tell everyone
+					publishProgress();
 					// sleep for next generation
 					try {
 						Thread.sleep(ITERATION_DELAY_MS);
@@ -241,6 +267,12 @@ public class MainActivity extends Activity {
 			} finally {
 				wakeLock.release();
 			}
+		}
+
+		@Override
+		protected void onPostExecute(Void result) {
+			// clean exit on error
+			iterationTask = null;
 		}
 	}
 }
