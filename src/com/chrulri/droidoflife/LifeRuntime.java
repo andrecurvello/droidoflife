@@ -31,6 +31,8 @@ final class LifeRuntime {
 	static final int OK = 0;
 	static final int E_INVALID_SIZE = 1;
 
+	static final int SETTINGS_SHOW_DEATHBIRTH = 0;
+
 	static {
 		System.loadLibrary("dol");
 	}
@@ -41,7 +43,7 @@ final class LifeRuntime {
 	
 	private static native void nRuntimeDestroy();
 	
-	private static native void nRuntimeBitmap(Bitmap bmp);
+	private static native void nRuntimeBitmap(Bitmap bmp, int settings);
 
 	/* ************************************************************************************************************* */
 
@@ -89,8 +91,8 @@ final class LifeRuntime {
 	/**
 	 * tell native runtime to render the scene
 	 */
-	public static void render(Bitmap bmp) {
-		nRuntimeBitmap(bmp);
+	public static void render(Bitmap bmp, int settings) {
+		nRuntimeBitmap(bmp, settings);
 	}
 
 	/**

@@ -11,6 +11,8 @@ extern "C" {
 #define com_chrulri_droidoflife_LifeRuntime_OK 0L
 #undef com_chrulri_droidoflife_LifeRuntime_E_INVALID_SIZE
 #define com_chrulri_droidoflife_LifeRuntime_E_INVALID_SIZE 1L
+#undef com_chrulri_droidoflife_LifeRuntime_SETTINGS_SHOW_DEATHBIRTH
+#define com_chrulri_droidoflife_LifeRuntime_SETTINGS_SHOW_DEATHBIRTH 0L
 /*
  * Class:     com_chrulri_droidoflife_LifeRuntime
  * Method:    nRuntimeCreate
@@ -38,10 +40,10 @@ JNIEXPORT void JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy
 /*
  * Class:     com_chrulri_droidoflife_LifeRuntime
  * Method:    nRuntimeBitmap
- * Signature: (Landroid/graphics/Bitmap;)V
+ * Signature: (Landroid/graphics/Bitmap;I)V
  */
 JNIEXPORT void JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jobject, jint);
 
 #ifdef __cplusplus
 }

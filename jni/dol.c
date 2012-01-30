@@ -283,7 +283,7 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy(JNIEnv *env UNUSED
 	LOGD("nRuntimeDestroy() exited");
 }
 
-void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass clazz UNUSED, jobject bitmap) {
+void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass clazz UNUSED, jobject bitmap, jint settings) {
 	LOGD("nRuntimeBitmap(%d) called", bitmap);
 
 	lockRuntime();
@@ -295,7 +295,7 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass
 	}
 
 	// render settings
-	uint enableBornDeath = 1; // TODO read user settings
+	int enableBornDeath = CHECK_BIT(settings, com_chrulri_droidoflife_LifeRuntime_SETTINGS_SHOW_DEATHBIRTH); 
 
 	AndroidBitmapInfo  info;
 	uint32_t          *pixels;
