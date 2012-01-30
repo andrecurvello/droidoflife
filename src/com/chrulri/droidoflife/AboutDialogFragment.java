@@ -22,6 +22,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.text.Html;
+import android.text.util.Linkify;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,8 +53,10 @@ public class AboutDialogFragment extends DialogFragment {
     View v = inflater.inflate(R.layout.about, container, false);
     TextView info = (TextView) v.findViewById(R.id.about_info);
     info.setText(infoText);
+    Linkify.addLinks(info, Linkify.ALL);
     TextView legal = (TextView) v.findViewById(R.id.about_legal);
     legal.setText(legalText);
+    Linkify.addLinks(legal, Linkify.ALL);
     return v;
   }
 }
