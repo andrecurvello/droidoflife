@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--***************************************************************************
+<!--
+ ******************************************************************************
  *  Droid of Life, an open source Android game based on Conway's Game of Life *
  *  Copyright (C) 2012  Christian Ulrich <chrulri@gmail.com>                  *
  *                                                                            *
@@ -15,12 +16,42 @@
  *                                                                            *
  *  You should have received a copy of the GNU General Public License         *
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
- ***************************************************************************-->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical" >
+ ******************************************************************************
+-->
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:padding="5dp" >
 
-	<!-- TODO implement about -->    
+    <TableRow>
 
-</LinearLayout>
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left|center"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_launcher" />
+
+        <TextView
+            android:id="@+id/about_info"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_gravity="left|center"
+            android:gravity="left" />
+    </TableRow>
+
+    <TableRow>
+
+        <TextView
+            android:id="@+id/about_legal"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_margin="8dip"
+            android:layout_span="2"
+            android:scrollHorizontally="true"
+            android:textColor="#cccccc"
+            android:textSize="10dip"
+            android:textStyle="italic" />
+    </TableRow>
+
+</TableLayout>
