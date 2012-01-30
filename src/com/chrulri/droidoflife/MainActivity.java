@@ -40,11 +40,14 @@ import com.chrulri.droidoflife.LifeRuntime.LifeRuntimeException;
 public class MainActivity extends FragmentActivity {
 	static final String TAG = MainActivity.class.getSimpleName();
 
+	static final int RESULT_SETTINGS = 0xF0;
+
 	static final long ITERATION_DELAY_MS = 100;
 
 	private IterationTask iterationTask;
 	private SurfaceHolder surface;
 	private Bitmap bitmap;
+	private int settingsCache;
 
 	private void refreshTitle() {
 		String title = "" + getText(R.string.app_name);
@@ -99,7 +102,7 @@ public class MainActivity extends FragmentActivity {
 	private void doRender() {
 		Canvas canvas = surface.lockCanvas();
 
-		LifeRuntime.render(bitmap);
+		LifeRuntime.render(bitmap, settingsCache);
 
 		Rect dst = surface.getSurfaceFrame();
 		canvas.drawBitmap(bitmap, null, dst, null);
@@ -111,8 +114,9 @@ public class MainActivity extends FragmentActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
-
 		getSupportActionBar().setDisplayShowHomeEnabled(false);
+
+		settingsCache = SettingsActivity.loadSettings(this);
 
 		SurfaceView view = (SurfaceView) findViewById(R.id.main_surfaceView);
 		surface = view.getHolder();
@@ -214,7 +218,7 @@ public class MainActivity extends FragmentActivity {
 			return true;
 		case R.id.mi_settings:
 			// open settings activity
-			startActivity(new Intent(this, SettingsActivity.class));
+			startActivityForResult(new Intent(this, SettingsActivity.class), RESULT_SETTINGS);
 			return true;
 		case R.id.mi_help:
 			// open help dialog
@@ -228,6 +232,17 @@ public class MainActivity extends FragmentActivity {
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+	  switch(requestCode) {
+	  case RESULT_SETTINGS:
+	    settingsCache = SettingsActivity.loadSettings(this);
+	    break;
+	  default:
+	    super.onActivityResult(requestCode, resultCode, data);
+	  }
 	}
 
 	class IterationTask extends AsyncTask<Void, Void, Void> {
