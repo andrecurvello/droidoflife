@@ -100,7 +100,17 @@ public class MainActivity extends FragmentActivity {
 	}
 
 	private void doRender() {
+		if(bitmap == null) {
+			// bitmap not ready yet, wtf?!
+			Log.w(TAG, "bitmap is null");
+			return;
+		}
+
 		Canvas canvas = surface.lockCanvas();
+		if(canvas == null) {
+			// surface not ready yet, nothing to do!
+			return;
+		}
 
 		LifeRuntime.render(bitmap, settingsCache);
 
