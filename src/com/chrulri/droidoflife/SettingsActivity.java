@@ -17,26 +17,15 @@
  ******************************************************************************/
 package com.chrulri.droidoflife;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
-import android.preference.PreferenceManager;
 
 public class SettingsActivity extends PreferenceActivity {
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    addPreferencesFromResource(R.xml.settings);
-  }
 
-  public static int loadSettings(Context ctx) {
-    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-    int settings = 0;
-    if(prefs.getBoolean("show_deathbirth", false)) {
-      settings |= (1<<LifeRuntime.SETTINGS_SHOW_DEATHBIRTH);
-    }
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		addPreferencesFromResource(R.xml.settings);
+	}
 
-    return settings;
-  }
 }

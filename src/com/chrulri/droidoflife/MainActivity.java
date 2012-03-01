@@ -19,9 +19,6 @@ package com.chrulri.droidoflife;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
@@ -30,8 +27,6 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.Menu;
 import android.support.v4.view.MenuItem;
 import android.util.Log;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
 
@@ -43,9 +38,7 @@ public class MainActivity extends FragmentActivity {
 	static final int RESULT_SETTINGS = 0xF0;
 
 	private IterationTask iterationTask;
-	private SurfaceHolder surface;
-	private Bitmap bitmap;
-	private int settingsCache;
+	private LifeView lifeView;
 
 	private void refreshTitle() {
 		String title = "" + getText(R.string.app_name);
@@ -62,9 +55,7 @@ public class MainActivity extends FragmentActivity {
 	}
 	
 	private void restartRuntime() {
-		if(bitmap != null) {
-			LifeRuntime.destroy();
-		}
+		LifeRuntime.destroy();
 
 		// TODO ask for width/height
 		final int width = 200;
@@ -81,7 +72,7 @@ public class MainActivity extends FragmentActivity {
 			return;
 		}
 
-		bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		lifeView.createBitmap(width, height);
 
 		refreshTitle();
 	}
@@ -89,33 +80,12 @@ public class MainActivity extends FragmentActivity {
 	private boolean doIteration() {
 		try {
 			LifeRuntime.iterate();
-			doRender();
+			lifeView.performRender();
 		} catch (IllegalAccessException e) {
 			Log.e(TAG, "error on iteration", e);
 			return false;
 		}
 		return true;
-	}
-
-	private void doRender() {
-		if(bitmap == null) {
-			// bitmap not ready yet, wtf?!
-			Log.w(TAG, "bitmap is null");
-			return;
-		}
-
-		Canvas canvas = surface.lockCanvas();
-		if(canvas == null) {
-			// surface not ready yet, nothing to do!
-			return;
-		}
-
-		LifeRuntime.render(bitmap, settingsCache);
-
-		Rect dst = surface.getSurfaceFrame();
-		canvas.drawBitmap(bitmap, null, dst, null);
-
-		surface.unlockCanvasAndPost(canvas);
 	}
 
 	@Override
@@ -124,14 +94,12 @@ public class MainActivity extends FragmentActivity {
 		setContentView(R.layout.main);
 		getSupportActionBar().setDisplayShowHomeEnabled(false);
 
-		settingsCache = SettingsActivity.loadSettings(this);
-
-		SurfaceView view = (SurfaceView) findViewById(R.id.main_surfaceView);
-		surface = view.getHolder();
+		lifeView = (LifeView) findViewById(R.id.main_lifeView);
+		lifeView.loadRuntimeSettings();
 
 		restartRuntime();
 
-		view.setOnClickListener(new OnClickListener() {
+		lifeView.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				// disable iteration task for manual mode
@@ -144,29 +112,8 @@ public class MainActivity extends FragmentActivity {
 				refreshTitle();
 			}
 		});
-		surface.addCallback(new SurfaceHolder.Callback() {
-			@Override
-			public void surfaceChanged(SurfaceHolder holder, int format,
-					int width, int height) {
-				doRender();
-			}
-
-			@Override
-			public void surfaceCreated(SurfaceHolder holder) {
-				doRender();
-			}
-
-			@Override
-			public void surfaceDestroyed(SurfaceHolder holder) {
-				// ignore
-			}
-			
-		});
 
 		refreshTitle();
-
-		// Manual
-		// TODO show manual
 	}
 
 	@Override
@@ -193,8 +140,6 @@ public class MainActivity extends FragmentActivity {
 		super.onDestroy();
 		// remove iteration task
 		iterationTask = null;
-		surface = null;
-		bitmap = null;
 		// destroy life with a nuclear bomb (!!)
 		LifeRuntime.destroy();
 	}
@@ -222,7 +167,6 @@ public class MainActivity extends FragmentActivity {
 		case R.id.mi_restart:
 			// restart game of life
 			restartRuntime();
-			doRender();
 			return true;
 		case R.id.mi_settings:
 			// open settings activity
@@ -245,7 +189,7 @@ public class MainActivity extends FragmentActivity {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 	  switch(requestCode) {
 	  case RESULT_SETTINGS:
-	    settingsCache = SettingsActivity.loadSettings(this);
+	    lifeView.loadRuntimeSettings();
 	    break;
 	  default:
 	    super.onActivityResult(requestCode, resultCode, data);
