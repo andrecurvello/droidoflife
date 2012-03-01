@@ -33,11 +33,11 @@ import android.view.SurfaceView;
 public class LifeView extends SurfaceView {
 	static final String TAG = LifeView.class.getSimpleName();
 
-	private int settings;
-	private Bitmap bitmap;
-	private Matrix matrix = new Matrix();
-	private RectF bounds = new RectF();
-	private RectF source = new RectF();
+	private int mSettings;
+	private Bitmap mBitmap;
+	private Matrix mMatrix = new Matrix();
+	private RectF mBounds = new RectF();
+	private RectF mSource = new RectF();
 
 	public LifeView(Context context) {
 		super(context);
@@ -72,8 +72,8 @@ public class LifeView extends SurfaceView {
 					int width, int height) {
 				Log.d(TAG, "surfaceChanged(" + holder + "," + format + ","
 						+ width + "," + height + ")");
-				bounds.set(0, 0, width, height);
-				matrix.setRectToRect(source, bounds, ScaleToFit.CENTER);
+				mBounds.set(0, 0, width, height);
+				mMatrix.setRectToRect(mSource, mBounds, ScaleToFit.CENTER);
 				performRender();
 			}
 		});
@@ -81,9 +81,9 @@ public class LifeView extends SurfaceView {
 
 	public void createBitmap(int width, int height) {
 		Log.d(TAG, "createBitmap(" + width + "," + height + ")");
-		bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-		source.set(0, 0, width, height);
-		matrix.setRectToRect(source, bounds, ScaleToFit.CENTER);
+		mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		mSource.set(0, 0, width, height);
+		mMatrix.setRectToRect(mSource, mBounds, ScaleToFit.CENTER);
 		performRender();
 	}
 
@@ -91,24 +91,22 @@ public class LifeView extends SurfaceView {
 		Log.d(TAG, "loadRuntimeSettings");
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(getContext());
-		settings = 0;
+		mSettings = 0;
 		if (prefs.getBoolean(Setup.PREF_SHOW_DEATHBIRTH, false)) {
-			settings |= (1 << LifeRuntime.SETTINGS_SHOW_DEATHBIRTH);
+			mSettings |= (1 << LifeRuntime.SETTINGS_SHOW_DEATHBIRTH);
 		}
 		performRender();
 	}
 
 	public void performRender() {
-		if (bitmap != null) {
-			LifeRuntime.render(bitmap, settings);
+		if (mBitmap != null) {
+			LifeRuntime.render(mBitmap, mSettings);
 
 			Canvas canvas = getHolder().lockCanvas();
-			if (canvas == null) {
-				// surface not ready yet, nothing to do!
-				return;
+			if (canvas != null) {
+				canvas.drawBitmap(mBitmap, mMatrix, null);
+				getHolder().unlockCanvasAndPost(canvas);
 			}
-			canvas.drawBitmap(bitmap, matrix, null);
-			getHolder().unlockCanvasAndPost(canvas);
 		}
 	}
 }

@@ -30,8 +30,8 @@ import android.widget.TextView;
 
 public class AboutDialogFragment extends DialogFragment {
 
-  private CharSequence infoText;
-  private CharSequence legalText;
+  private CharSequence mInfoText;
+  private CharSequence mLegalText;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -44,18 +44,18 @@ public class AboutDialogFragment extends DialogFragment {
     } catch (PackageManager.NameNotFoundException e) {
       version = "";
     }
-    infoText = Html.fromHtml(getString(R.string.about_info, version));
-    legalText = Html.fromHtml(getString(R.string.about_legal));
+    mInfoText = Html.fromHtml(getString(R.string.about_info, version));
+    mLegalText = Html.fromHtml(getString(R.string.about_legal));
   }
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
     View v = inflater.inflate(R.layout.about, container, false);
     TextView info = (TextView) v.findViewById(R.id.about_info);
-    info.setText(infoText);
+    info.setText(mInfoText);
     Linkify.addLinks(info, Linkify.ALL);
     TextView legal = (TextView) v.findViewById(R.id.about_legal);
-    legal.setText(legalText);
+    legal.setText(mLegalText);
     Linkify.addLinks(legal, Linkify.ALL);
     return v;
   }

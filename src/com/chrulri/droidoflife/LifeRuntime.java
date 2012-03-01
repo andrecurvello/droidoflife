@@ -47,18 +47,18 @@ final class LifeRuntime {
 
 	/* ************************************************************************************************************* */
 
-	private static LifeRuntime runtime = null;
+	private static LifeRuntime mRUNTIME = null;
 
-	private int iteration;
+	private int mIteration;
 
 	private LifeRuntime() {
-		iteration = 0;
+		mIteration = 0;
 	}
 
 	public static int getIteration() {
-		if(runtime == null)
+		if(mRUNTIME == null)
 			return 0;
-		return runtime.iteration;
+		return mRUNTIME.mIteration;
 	}
 	
 	/**
@@ -69,7 +69,7 @@ final class LifeRuntime {
 	 * @throws LifeRuntimeException 
 	 */
 	public static void create(int width, int height) throws LifeRuntimeException {
-		runtime = new LifeRuntime();
+		mRUNTIME = new LifeRuntime();
 		int ret = nRuntimeCreate(width, height);
 		if (ret != OK) {
 			throw new LifeRuntimeException("failed to initialize the droid of life runtime", "_init", ret);
@@ -85,7 +85,7 @@ final class LifeRuntime {
 	public static int iterate() throws IllegalAccessException {
 		checkRuntime();
 		nRuntimeIterate();
-		return ++runtime.iteration;
+		return ++mRUNTIME.mIteration;
 	}
 
 	/**
@@ -100,14 +100,14 @@ final class LifeRuntime {
 	 */
 	public static void destroy() {
 		nRuntimeDestroy();
-		runtime = null;
+		mRUNTIME = null;
 	}
 
 	/**
 	 * @throws IllegalAccessException if runtime is not initialized yet
 	 */
 	private static void checkRuntime() throws IllegalAccessException {
-		if (runtime == null) {
+		if (mRUNTIME == null) {
 			throw new IllegalAccessException("runtime is not initialized yet");
 		}
 	}

@@ -37,8 +37,8 @@ public class MainActivity extends FragmentActivity {
 
 	static final int RESULT_SETTINGS = 0xF0;
 
-	private IterationTask iterationTask;
-	private LifeView lifeView;
+	private IterationTask mIterationTask;
+	private LifeView mLifeView;
 
 	private void refreshTitle() {
 		String title = "" + getText(R.string.app_name);
@@ -48,7 +48,7 @@ public class MainActivity extends FragmentActivity {
 			title += " (#" + iteration + ")";
 		}
 		// append automatic mode
-		if (iterationTask != null) {
+		if (mIterationTask != null) {
 			title += " - " + getText(R.string.auto_short);
 		}
 		setTitle(title);
@@ -72,7 +72,7 @@ public class MainActivity extends FragmentActivity {
 			return;
 		}
 
-		lifeView.createBitmap(width, height);
+		mLifeView.createBitmap(width, height);
 
 		refreshTitle();
 	}
@@ -80,7 +80,7 @@ public class MainActivity extends FragmentActivity {
 	private boolean doIteration() {
 		try {
 			LifeRuntime.iterate();
-			lifeView.performRender();
+			mLifeView.performRender();
 		} catch (IllegalAccessException e) {
 			Log.e(TAG, "error on iteration", e);
 			return false;
@@ -94,18 +94,18 @@ public class MainActivity extends FragmentActivity {
 		setContentView(R.layout.main);
 		getSupportActionBar().setDisplayShowHomeEnabled(false);
 
-		lifeView = (LifeView) findViewById(R.id.main_lifeView);
-		lifeView.loadRuntimeSettings();
+		mLifeView = (LifeView) findViewById(R.id.main_lifeView);
+		mLifeView.loadRuntimeSettings();
 
 		restartRuntime();
 
-		lifeView.setOnClickListener(new OnClickListener() {
+		mLifeView.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				// disable iteration task for manual mode
-				if (iterationTask != null) {
-					iterationTask.cancel(false);
-					iterationTask = null;
+				if (mIterationTask != null) {
+					mIterationTask.cancel(false);
+					mIterationTask = null;
 				} else {
 					doIteration();
 				}
@@ -120,9 +120,9 @@ public class MainActivity extends FragmentActivity {
 	protected void onResume() {
 		super.onResume();
 		// restart iteration
-		if (iterationTask != null) {
-			iterationTask = new IterationTask();
-			iterationTask.execute();
+		if (mIterationTask != null) {
+			mIterationTask = new IterationTask();
+			mIterationTask.execute();
 		}
 	}
 
@@ -130,8 +130,8 @@ public class MainActivity extends FragmentActivity {
 	protected void onPause() {
 		super.onPause();
 		// pause iteration
-		if (iterationTask != null) {
-			iterationTask.cancel(false);
+		if (mIterationTask != null) {
+			mIterationTask.cancel(false);
 		}
 	}
 
@@ -139,7 +139,7 @@ public class MainActivity extends FragmentActivity {
 	protected void onDestroy() {
 		super.onDestroy();
 		// remove iteration task
-		iterationTask = null;
+		mIterationTask = null;
 		// destroy life with a nuclear bomb (!!)
 		LifeRuntime.destroy();
 	}
@@ -155,12 +155,12 @@ public class MainActivity extends FragmentActivity {
 		switch(item.getItemId()) {
 		case R.id.mi_automatic:
 			// toggle automatic mode
-			if (iterationTask == null) {
-				iterationTask = new IterationTask();
-				iterationTask.execute();
+			if (mIterationTask == null) {
+				mIterationTask = new IterationTask();
+				mIterationTask.execute();
 			} else {
-				iterationTask.cancel(false);
-				iterationTask = null;
+				mIterationTask.cancel(false);
+				mIterationTask = null;
 			}
 			refreshTitle();
 			return true;
@@ -189,7 +189,7 @@ public class MainActivity extends FragmentActivity {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 	  switch(requestCode) {
 	  case RESULT_SETTINGS:
-	    lifeView.loadRuntimeSettings();
+	    mLifeView.loadRuntimeSettings();
 	    break;
 	  default:
 	    super.onActivityResult(requestCode, resultCode, data);
@@ -233,7 +233,7 @@ public class MainActivity extends FragmentActivity {
 		@Override
 		protected void onPostExecute(Void result) {
 			// clean exit on error
-			iterationTask = null;
+			mIterationTask = null;
 		}
 	}
 }
