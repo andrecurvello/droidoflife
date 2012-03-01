@@ -42,8 +42,6 @@ public class MainActivity extends FragmentActivity {
 
 	static final int RESULT_SETTINGS = 0xF0;
 
-	static final long ITERATION_DELAY_MS = 100;
-
 	private IterationTask iterationTask;
 	private SurfaceHolder surface;
 	private Bitmap bitmap;
@@ -231,9 +229,8 @@ public class MainActivity extends FragmentActivity {
 			startActivityForResult(new Intent(this, SettingsActivity.class), RESULT_SETTINGS);
 			return true;
 		case R.id.mi_help:
-			// open help dialog
-			DialogFragment help = new HelpDialogFragment();
-			help.show(getSupportFragmentManager(), null);
+			// open help video
+			startActivity(new Intent(Intent.ACTION_VIEW, Setup.HELP_VIDEO_URI));
 			return true;
 		case R.id.mi_about:
 			// open about dialog
@@ -278,7 +275,7 @@ public class MainActivity extends FragmentActivity {
 					publishProgress();
 					// sleep for next generation
 					try {
-						Thread.sleep(ITERATION_DELAY_MS);
+						Thread.sleep(Setup.ITERATION_DELAY_MS);
 					} catch (InterruptedException e) {
 						// ignore
 					}
