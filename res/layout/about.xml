@@ -18,40 +18,28 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
  ******************************************************************************
 -->
-<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
     android:padding="5dp" >
 
-    <TableRow>
+    <TextView
+        android:id="@+id/about_info"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_gravity="left|center"
+        android:drawableLeft="@drawable/ic_launcher"
+        android:gravity="left" />
 
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="left|center"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/ic_launcher" />
+    <TextView
+        android:id="@+id/about_legal"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_gravity="fill_horizontal"
+        android:layout_margin="8dip"
+        android:textColor="#cccccc"
+        android:textSize="10dip"
+        android:textStyle="italic" />
 
-        <TextView
-            android:id="@+id/about_info"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:layout_gravity="left|center"
-            android:gravity="left" />
-    </TableRow>
-
-    <TableRow>
-
-        <TextView
-            android:id="@+id/about_legal"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:layout_margin="8dip"
-            android:layout_span="2"
-            android:scrollHorizontally="true"
-            android:textColor="#cccccc"
-            android:textSize="10dip"
-            android:textStyle="italic" />
-    </TableRow>
-
-</TableLayout>
+</LinearLayout>

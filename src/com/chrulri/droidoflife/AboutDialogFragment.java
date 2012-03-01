@@ -37,12 +37,12 @@ public class AboutDialogFragment extends DialogFragment {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setStyle(STYLE_NO_TITLE, 0);
-    String version = "";
+    String version;
     try {
       PackageInfo packageInfo = getActivity().getPackageManager().getPackageInfo(getActivity().getPackageName(), 0);
       version = packageInfo.versionName;
     } catch (PackageManager.NameNotFoundException e) {
-      // nop
+      version = "";
     }
     infoText = Html.fromHtml(getString(R.string.about_info, version));
     legalText = Html.fromHtml(getString(R.string.about_legal));
