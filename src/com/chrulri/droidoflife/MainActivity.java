@@ -26,9 +26,6 @@ import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.Menu;
 import android.support.v4.view.MenuItem;
-import android.util.Log;
-import android.view.View;
-import android.view.View.OnClickListener;
 
 import com.chrulri.droidoflife.LifeRuntime.LifeRuntimeException;
 
@@ -53,7 +50,7 @@ public class MainActivity extends FragmentActivity {
 		}
 		setTitle(title);
 	}
-	
+
 	private void restartRuntime() {
 		LifeRuntime.destroy();
 
@@ -64,7 +61,7 @@ public class MainActivity extends FragmentActivity {
 		try {
 			LifeRuntime.create(width, height);
 		} catch (LifeRuntimeException e) {
-			e.printStackTrace();
+			Log.error(TAG, "restartRuntime()", e);
 			// TODO show error
 
 			// emergency exit
@@ -82,7 +79,7 @@ public class MainActivity extends FragmentActivity {
 			LifeRuntime.iterate();
 			mLifeView.performRender();
 		} catch (IllegalAccessException e) {
-			Log.e(TAG, "error on iteration", e);
+			Log.error(TAG, "error on iteration", e);
 			return false;
 		}
 		return true;
@@ -98,20 +95,6 @@ public class MainActivity extends FragmentActivity {
 		mLifeView.loadRuntimeSettings();
 
 		restartRuntime();
-
-		mLifeView.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				// disable iteration task for manual mode
-				if (mIterationTask != null) {
-					mIterationTask.cancel(false);
-					mIterationTask = null;
-				} else {
-					doIteration();
-				}
-				refreshTitle();
-			}
-		});
 
 		refreshTitle();
 	}
@@ -152,9 +135,20 @@ public class MainActivity extends FragmentActivity {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		switch(item.getItemId()) {
+		switch (item.getItemId()) {
+		case R.id.mi_manually:
+			Log.debug(TAG, "trigger manuel iteration");
+			// disable iteration task for manual mode
+			if (mIterationTask != null) {
+				mIterationTask.cancel(false);
+				mIterationTask = null;
+			} else {
+				doIteration();
+			}
+			refreshTitle();
+			break;
 		case R.id.mi_automatic:
-			// toggle automatic mode
+			Log.debug(TAG, "toggle automatic mode");
 			if (mIterationTask == null) {
 				mIterationTask = new IterationTask();
 				mIterationTask.execute();
@@ -165,19 +159,20 @@ public class MainActivity extends FragmentActivity {
 			refreshTitle();
 			return true;
 		case R.id.mi_restart:
-			// restart game of life
+			Log.debug(TAG, "restart game of life");
 			restartRuntime();
 			return true;
 		case R.id.mi_settings:
-			// open settings activity
-			startActivityForResult(new Intent(this, SettingsActivity.class), RESULT_SETTINGS);
+			Log.debug(TAG, "open settings activity");
+			startActivityForResult(new Intent(this, SettingsActivity.class),
+					RESULT_SETTINGS);
 			return true;
 		case R.id.mi_help:
-			// open help video
+			Log.debug(TAG, "open help video");
 			startActivity(new Intent(Intent.ACTION_VIEW, Setup.HELP_VIDEO_URI));
 			return true;
 		case R.id.mi_about:
-			// open about dialog
+			Log.debug(TAG, "open about dialog");
 			DialogFragment about = new AboutDialogFragment();
 			about.show(getSupportFragmentManager(), null);
 			return true;
@@ -187,17 +182,17 @@ public class MainActivity extends FragmentActivity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-	  switch(requestCode) {
-	  case RESULT_SETTINGS:
-	    mLifeView.loadRuntimeSettings();
-	    break;
-	  default:
-	    super.onActivityResult(requestCode, resultCode, data);
-	  }
+		switch (requestCode) {
+		case RESULT_SETTINGS:
+			mLifeView.loadRuntimeSettings();
+			break;
+		default:
+			super.onActivityResult(requestCode, resultCode, data);
+		}
 	}
 
-	class IterationTask extends AsyncTask<Void, Void, Void> {
-		
+	private class IterationTask extends AsyncTask<Void, Void, Void> {
+
 		@Override
 		protected void onProgressUpdate(Void... values) {
 			refreshTitle();
@@ -206,12 +201,13 @@ public class MainActivity extends FragmentActivity {
 		@Override
 		protected Void doInBackground(Void... params) {
 			PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-			PowerManager.WakeLock wakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
+			PowerManager.WakeLock wakeLock = pm.newWakeLock(
+					PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
 			wakeLock.acquire();
 			try {
 				while (!isCancelled()) {
 					// new generation ready, hurray!
-					if(!doIteration()) {
+					if (!doIteration()) {
 						// exit on error
 						return null;
 					}

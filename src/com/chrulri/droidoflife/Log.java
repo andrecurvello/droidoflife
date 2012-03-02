@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--***************************************************************************
+/******************************************************************************
  *  Droid of Life, an open source Android game based on Conway's Game of Life *
  *  Copyright (C) 2012  Christian Ulrich <chrulri@gmail.com>                  *
  *                                                                            *
@@ -15,14 +14,20 @@
  *                                                                            *
  *  You should have received a copy of the GNU General Public License         *
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
- ***************************************************************************-->
-<resources>
-    <string name="automatic">Automatisch</string>
-    <string name="restart">Neustart</string>
-    <string name="help">Hilfe</string>
-    <string name="settings">Einstellungen</string>
-    <string name="manually">Manuell</string>
-    <string name="about">Über Droid of Life</string>
-    <string name="show_deathbirth_title">Tod &amp; Geburt</string>
-    <string name="show_deathbirth_summary">Zeige Tod und Geburt der Zellen</string>
-</resources>
+ ******************************************************************************/
+package com.chrulri.droidoflife;
+
+public final class Log {
+	private Log() {
+	}
+
+	public static void debug(String tag, String msg) {
+		if (Setup.DEBUGGING) {
+			android.util.Log.d(tag, msg);
+		}
+	}
+
+	public static void error(String tag, String msg, Throwable t) {
+		android.util.Log.e(tag, msg, t);
+	}
+}
