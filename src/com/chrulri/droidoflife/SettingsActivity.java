@@ -15,18 +15,19 @@
  *  You should have received a copy of the GNU General Public License         *
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
  ******************************************************************************/
-package com.chrulri.droidoflife;
 
-import com.actionbarsherlock.app.SherlockPreferenceActivity;
+package com.chrulri.droidoflife;
 
 import android.os.Bundle;
 
+import com.actionbarsherlock.app.SherlockPreferenceActivity;
+
 public class SettingsActivity extends SherlockPreferenceActivity {
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		addPreferencesFromResource(R.xml.settings);
-	}
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        addPreferencesFromResource(R.xml.settings);
+    }
 
 }

@@ -15,9 +15,8 @@
  *  You should have received a copy of the GNU General Public License         *
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
  ******************************************************************************/
-package com.chrulri.droidoflife;
 
-import com.actionbarsherlock.app.SherlockDialogFragment;
+package com.chrulri.droidoflife;
 
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -29,35 +28,39 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.actionbarsherlock.app.SherlockDialogFragment;
+
 public class AboutDialogFragment extends SherlockDialogFragment {
 
-  private CharSequence mInfoText;
-  private CharSequence mLegalText;
+    private CharSequence mInfoText;
+    private CharSequence mLegalText;
 
-  @Override
-  public void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setStyle(STYLE_NO_TITLE, 0);
-    String version;
-    try {
-      PackageInfo packageInfo = getActivity().getPackageManager().getPackageInfo(getActivity().getPackageName(), 0);
-      version = packageInfo.versionName;
-    } catch (PackageManager.NameNotFoundException e) {
-      version = "";
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setStyle(STYLE_NO_TITLE, 0);
+        String version;
+        try {
+            PackageInfo packageInfo = getActivity().getPackageManager()
+                    .getPackageInfo(getActivity().getPackageName(), 0);
+            version = packageInfo.versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            version = "";
+        }
+        mInfoText = Html.fromHtml(getString(R.string.about_info, version));
+        mLegalText = Html.fromHtml(getString(R.string.about_legal));
     }
-    mInfoText = Html.fromHtml(getString(R.string.about_info, version));
-    mLegalText = Html.fromHtml(getString(R.string.about_legal));
-  }
 
-  @Override
-  public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-    View v = inflater.inflate(R.layout.about, container, false);
-    TextView info = (TextView) v.findViewById(R.id.about_info);
-    info.setText(mInfoText);
-    Linkify.addLinks(info, Linkify.ALL);
-    TextView legal = (TextView) v.findViewById(R.id.about_legal);
-    legal.setText(mLegalText);
-    Linkify.addLinks(legal, Linkify.ALL);
-    return v;
-  }
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+            Bundle savedInstanceState) {
+        View v = inflater.inflate(R.layout.about, container, false);
+        TextView info = (TextView) v.findViewById(R.id.about_info);
+        info.setText(mInfoText);
+        Linkify.addLinks(info, Linkify.ALL);
+        TextView legal = (TextView) v.findViewById(R.id.about_legal);
+        legal.setText(mLegalText);
+        Linkify.addLinks(legal, Linkify.ALL);
+        return v;
+    }
 }

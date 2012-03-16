@@ -15,19 +15,20 @@
  *  You should have received a copy of the GNU General Public License         *
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
  ******************************************************************************/
+
 package com.chrulri.droidoflife;
 
 public final class Log {
-	private Log() {
-	}
+    private Log() {
+    }
 
-	public static void debug(String tag, String msg) {
-		if (Setup.DEBUGGING) {
-			android.util.Log.d(tag, msg);
-		}
-	}
+    public static void debug(String tag, String msg) {
+        if (Setup.DEBUGGING) {
+            android.util.Log.d(tag, msg);
+        }
+    }
 
-	public static void error(String tag, String msg, Throwable t) {
-		android.util.Log.e(tag, msg, t);
-	}
+    public static void error(String tag, String msg, Throwable t) {
+        android.util.Log.e(tag, msg, t);
+    }
 }

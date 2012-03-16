@@ -15,20 +15,22 @@
  *  You should have received a copy of the GNU General Public License         *
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
  ******************************************************************************/
+
 package com.chrulri.droidoflife;
 
 import android.net.Uri;
 
 final class Setup {
-	private Setup() {
-	}
+    private Setup() {
+    }
 
-	static final boolean DEBUGGING = false;
+    static final boolean DEBUGGING = false;
 
-	static final long ITERATION_DELAY_MS = 100;
+    static final long ITERATION_DELAY_MS = 100;
 
-	static final Uri HELP_VIDEO_URI = Uri.parse("http://www.youtube.com/watch?v=u2Ydzz_wAjg");
+    static final Uri HELP_VIDEO_URI = Uri
+            .parse("http://www.youtube.com/watch?v=u2Ydzz_wAjg");
 
-	static final String PREF_SHOW_DEATHBIRTH = "show_deathbirth";
+    static final String PREF_SHOW_DEATHBIRTH = "show_deathbirth";
 
 }

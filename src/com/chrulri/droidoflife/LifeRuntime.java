@@ -15,118 +15,121 @@
  *  You should have received a copy of the GNU General Public License         *
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
  ******************************************************************************/
+
 package com.chrulri.droidoflife;
 
 import android.graphics.Bitmap;
-
 
 /**
  * Droid of Life - Native Worker Class
  */
 final class LifeRuntime {
-	static final String TAG = LifeRuntime.class.getSimpleName();
+    static final String TAG = LifeRuntime.class.getSimpleName();
 
-	/* ************************************************************************************************************* */
-	
-	static final int OK = 0;
-	static final int E_INVALID_SIZE = 1;
+    /* ************************************************************************************************************* */
 
-	static final int SETTINGS_SHOW_DEATHBIRTH = 0;
+    static final int OK = 0;
+    static final int E_INVALID_SIZE = 1;
 
-	static {
-		System.loadLibrary("dol");
-	}
+    static final int SETTINGS_SHOW_DEATHBIRTH = 0;
 
-	private static native int nRuntimeCreate(int width, int height);
+    static {
+        System.loadLibrary("dol");
+    }
 
-	private static native void nRuntimeIterate();
-	
-	private static native void nRuntimeDestroy();
-	
-	private static native void nRuntimeBitmap(Bitmap bmp, int settings);
+    private static native int nRuntimeCreate(int width, int height);
 
-	/* ************************************************************************************************************* */
+    private static native void nRuntimeIterate();
 
-	private static LifeRuntime mRUNTIME = null;
+    private static native void nRuntimeDestroy();
 
-	private int mIteration;
+    private static native void nRuntimeBitmap(Bitmap bmp, int settings);
 
-	private LifeRuntime() {
-		mIteration = 0;
-	}
+    /* ************************************************************************************************************* */
 
-	public static int getIteration() {
-		if(mRUNTIME == null)
-			return 0;
-		return mRUNTIME.mIteration;
-	}
-	
-	/**
-	 * creates runtime
-	 * 
-	 * @param width count of cells per row
-	 * @param height count of rows of cells
-	 * @throws LifeRuntimeException 
-	 */
-	public static void create(int width, int height) throws LifeRuntimeException {
-		mRUNTIME = new LifeRuntime();
-		int ret = nRuntimeCreate(width, height);
-		if (ret != OK) {
-			throw new LifeRuntimeException("failed to initialize the droid of life runtime", "_init", ret);
-		}
-	}
+    private static LifeRuntime mRUNTIME = null;
 
-	/**
-	 * iterate through one generation of life
-	 * 
-	 * @return number of generation
-	 * @throws IllegalAccessException if runtime is not initialized yet
-	 */
-	public static int iterate() throws IllegalAccessException {
-		checkRuntime();
-		nRuntimeIterate();
-		return ++mRUNTIME.mIteration;
-	}
+    private int mIteration;
 
-	/**
-	 * tell native runtime to render the scene
-	 */
-	public static void render(Bitmap bmp, int settings) {
-		nRuntimeBitmap(bmp, settings);
-	}
+    private LifeRuntime() {
+        mIteration = 0;
+    }
 
-	/**
-	 * destroy that beautiful place of life
-	 */
-	public static void destroy() {
-		nRuntimeDestroy();
-		mRUNTIME = null;
-	}
+    public static int getIteration() {
+        if (mRUNTIME == null)
+            return 0;
+        return mRUNTIME.mIteration;
+    }
 
-	/**
-	 * @throws IllegalAccessException if runtime is not initialized yet
-	 */
-	private static void checkRuntime() throws IllegalAccessException {
-		if (mRUNTIME == null) {
-			throw new IllegalAccessException("runtime is not initialized yet");
-		}
-	}
+    /**
+     * creates runtime
+     * 
+     * @param width count of cells per row
+     * @param height count of rows of cells
+     * @throws LifeRuntimeException
+     */
+    public static void create(int width, int height) throws LifeRuntimeException {
+        mRUNTIME = new LifeRuntime();
+        int ret = nRuntimeCreate(width, height);
+        if (ret != OK) {
+            throw new LifeRuntimeException(
+                    "failed to initialize the droid of life runtime", "_init", ret);
+        }
+    }
 
-	/* ************************************************************************************************************* */
+    /**
+     * iterate through one generation of life
+     * 
+     * @return number of generation
+     * @throws IllegalAccessException if runtime is not initialized yet
+     */
+    public static int iterate() throws IllegalAccessException {
+        checkRuntime();
+        nRuntimeIterate();
+        return ++mRUNTIME.mIteration;
+    }
 
-	public static class LifeRuntimeException extends Exception {
-		private static final long serialVersionUID = 1L;
+    /**
+     * tell native runtime to render the scene
+     */
+    public static void render(Bitmap bmp, int settings) {
+        nRuntimeBitmap(bmp, settings);
+    }
 
-		public LifeRuntimeException(String detailMessage, String nativeMethodName, int nativeReturnValue) {
-			super(detailMessage, new NativeException(nativeMethodName, nativeReturnValue));
-		}
-	}
+    /**
+     * destroy that beautiful place of life
+     */
+    public static void destroy() {
+        nRuntimeDestroy();
+        mRUNTIME = null;
+    }
 
-	public static class NativeException extends Exception {
-		private static final long serialVersionUID = 1L;
+    /**
+     * @throws IllegalAccessException if runtime is not initialized yet
+     */
+    private static void checkRuntime() throws IllegalAccessException {
+        if (mRUNTIME == null) {
+            throw new IllegalAccessException("runtime is not initialized yet");
+        }
+    }
 
-		public NativeException(String methodName, int returnValue) {
-			super("method " + methodName + " returns " + returnValue);
-		}
-	}
+    /* ************************************************************************************************************* */
+
+    public static class LifeRuntimeException extends Exception {
+        private static final long serialVersionUID = 1L;
+
+        public LifeRuntimeException(String detailMessage, String nativeMethodName,
+                int nativeReturnValue) {
+            super(detailMessage, new NativeException(nativeMethodName,
+                    nativeReturnValue));
+        }
+    }
+
+    public static class NativeException extends Exception {
+        private static final long serialVersionUID = 1L;
+
+        public NativeException(String methodName, int returnValue) {
+            super("method " + methodName + " returns " + returnValue);
+        }
+    }
 }

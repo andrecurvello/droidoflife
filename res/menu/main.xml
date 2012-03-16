@@ -20,7 +20,6 @@
 -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
-    <!-- FIXME need new icon for manually! -->
     <item
         android:id="@+id/mi_manually"
         android:icon="@drawable/ic_action_reload"

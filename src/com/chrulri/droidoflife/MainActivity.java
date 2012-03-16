@@ -15,6 +15,7 @@
  *  You should have received a copy of the GNU General Public License         *
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
  ******************************************************************************/
+
 package com.chrulri.droidoflife;
 
 import android.content.Context;
@@ -29,206 +30,206 @@ import com.actionbarsherlock.view.MenuItem;
 import com.chrulri.droidoflife.LifeRuntime.LifeRuntimeException;
 
 public class MainActivity extends SherlockFragmentActivity {
-	static final String TAG = MainActivity.class.getSimpleName();
+    static final String TAG = MainActivity.class.getSimpleName();
 
-	static final int RESULT_SETTINGS = 0xF0;
+    static final int RESULT_SETTINGS = 0xF0;
 
-	private IterationTask mIterationTask;
-	private LifeView mLifeView;
+    private IterationTask mIterationTask;
+    private LifeView mLifeView;
 
-	private void refreshTitle() {
-		String title = "" + getText(R.string.app_name);
-		// append iteration
-		int iteration = LifeRuntime.getIteration();
-		if (iteration > 0) {
-			title += " (#" + iteration + ")";
-		}
-		// append automatic mode
-		if (mIterationTask != null) {
-			title += " - " + getText(R.string.auto_short);
-		}
-		setTitle(title);
-	}
+    private void refreshTitle() {
+        String title = "" + getText(R.string.app_name);
+        // append iteration
+        int iteration = LifeRuntime.getIteration();
+        if (iteration > 0) {
+            title += " (#" + iteration + ")";
+        }
+        // append automatic mode
+        if (mIterationTask != null) {
+            title += " - " + getText(R.string.auto_short);
+        }
+        setTitle(title);
+    }
 
-	private void restartRuntime() {
-		LifeRuntime.destroy();
+    private void restartRuntime() {
+        LifeRuntime.destroy();
 
-		// TODO ask for width/height
-		final int width = 200;
-		final int height = 100;
+        // TODO ask for width/height
+        final int width = 200;
+        final int height = 100;
 
-		try {
-			LifeRuntime.create(width, height);
-		} catch (LifeRuntimeException e) {
-			Log.error(TAG, "restartRuntime()", e);
-			// TODO show error
+        try {
+            LifeRuntime.create(width, height);
+        } catch (LifeRuntimeException e) {
+            Log.error(TAG, "restartRuntime()", e);
+            // TODO show error
 
-			// emergency exit
-			finish();
-			return;
-		}
+            // emergency exit
+            finish();
+            return;
+        }
 
-		mLifeView.createBitmap(width, height);
+        mLifeView.createBitmap(width, height);
 
-		refreshTitle();
-	}
+        refreshTitle();
+    }
 
-	private boolean doIteration() {
-		try {
-			LifeRuntime.iterate();
-			mLifeView.performRender(true);
-		} catch (IllegalAccessException e) {
-			Log.error(TAG, "error on iteration", e);
-			return false;
-		}
-		return true;
-	}
+    private boolean doIteration() {
+        try {
+            LifeRuntime.iterate();
+            mLifeView.performRender(true);
+        } catch (IllegalAccessException e) {
+            Log.error(TAG, "error on iteration", e);
+            return false;
+        }
+        return true;
+    }
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.main);
-		getSupportActionBar().setDisplayShowHomeEnabled(false);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+        getSupportActionBar().setDisplayShowHomeEnabled(false);
 
-		mLifeView = (LifeView) findViewById(R.id.main_lifeView);
-		mLifeView.loadRuntimeSettings();
+        mLifeView = (LifeView) findViewById(R.id.main_lifeView);
+        mLifeView.loadRuntimeSettings();
 
-		restartRuntime();
+        restartRuntime();
 
-		refreshTitle();
-	}
+        refreshTitle();
+    }
 
-	@Override
-	protected void onResume() {
-		super.onResume();
-		// restart iteration
-		if (mIterationTask != null) {
-			mIterationTask = new IterationTask();
-			mIterationTask.execute();
-		}
-	}
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // restart iteration
+        if (mIterationTask != null) {
+            mIterationTask = new IterationTask();
+            mIterationTask.execute();
+        }
+    }
 
-	@Override
-	protected void onPause() {
-		super.onPause();
-		// pause iteration
-		if (mIterationTask != null) {
-			mIterationTask.cancel(false);
-		}
-	}
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // pause iteration
+        if (mIterationTask != null) {
+            mIterationTask.cancel(false);
+        }
+    }
 
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-		// remove iteration task
-		mIterationTask = null;
-		// destroy life with a nuclear bomb (!!)
-		LifeRuntime.destroy();
-	}
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // remove iteration task
+        mIterationTask = null;
+        // destroy life with a nuclear bomb (!!)
+        LifeRuntime.destroy();
+    }
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		getSupportMenuInflater().inflate(R.menu.main, menu);
-		return super.onCreateOptionsMenu(menu);
-	}
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getSupportMenuInflater().inflate(R.menu.main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
 
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-		case R.id.mi_manually:
-			Log.debug(TAG, "trigger manual iteration");
-			// disable iteration task for manual mode
-			if (mIterationTask != null) {
-				mIterationTask.cancel(false);
-				mIterationTask = null;
-			} else {
-				doIteration();
-			}
-			refreshTitle();
-			break;
-		case R.id.mi_automatic:
-			Log.debug(TAG, "toggle automatic mode");
-			if (mIterationTask == null) {
-				mIterationTask = new IterationTask();
-				mIterationTask.execute();
-			} else {
-				mIterationTask.cancel(false);
-				mIterationTask = null;
-			}
-			refreshTitle();
-			return true;
-		case R.id.mi_restart:
-			Log.debug(TAG, "restart game of life");
-			restartRuntime();
-			return true;
-		case R.id.mi_settings:
-			Log.debug(TAG, "open settings activity");
-			startActivityForResult(new Intent(this, SettingsActivity.class),
-					RESULT_SETTINGS);
-			return true;
-		case R.id.mi_help:
-			Log.debug(TAG, "open help video");
-			startActivity(new Intent(Intent.ACTION_VIEW, Setup.HELP_VIDEO_URI));
-			return true;
-		case R.id.mi_about:
-			Log.debug(TAG, "open about dialog");
-			AboutDialogFragment about = new AboutDialogFragment();
-			about.show(getSupportFragmentManager(), null);
-			return true;
-		}
-		return super.onOptionsItemSelected(item);
-	}
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.mi_manually:
+                Log.debug(TAG, "trigger manual iteration");
+                // disable iteration task for manual mode
+                if (mIterationTask != null) {
+                    mIterationTask.cancel(false);
+                    mIterationTask = null;
+                } else {
+                    doIteration();
+                }
+                refreshTitle();
+                break;
+            case R.id.mi_automatic:
+                Log.debug(TAG, "toggle automatic mode");
+                if (mIterationTask == null) {
+                    mIterationTask = new IterationTask();
+                    mIterationTask.execute();
+                } else {
+                    mIterationTask.cancel(false);
+                    mIterationTask = null;
+                }
+                refreshTitle();
+                return true;
+            case R.id.mi_restart:
+                Log.debug(TAG, "restart game of life");
+                restartRuntime();
+                return true;
+            case R.id.mi_settings:
+                Log.debug(TAG, "open settings activity");
+                startActivityForResult(new Intent(this, SettingsActivity.class),
+                        RESULT_SETTINGS);
+                return true;
+            case R.id.mi_help:
+                Log.debug(TAG, "open help video");
+                startActivity(new Intent(Intent.ACTION_VIEW, Setup.HELP_VIDEO_URI));
+                return true;
+            case R.id.mi_about:
+                Log.debug(TAG, "open about dialog");
+                AboutDialogFragment about = new AboutDialogFragment();
+                about.show(getSupportFragmentManager(), null);
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		switch (requestCode) {
-		case RESULT_SETTINGS:
-			mLifeView.loadRuntimeSettings();
-			break;
-		default:
-			super.onActivityResult(requestCode, resultCode, data);
-		}
-	}
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case RESULT_SETTINGS:
+                mLifeView.loadRuntimeSettings();
+                break;
+            default:
+                super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
 
-	private class IterationTask extends AsyncTask<Void, Void, Void> {
+    private class IterationTask extends AsyncTask<Void, Void, Void> {
 
-		@Override
-		protected void onProgressUpdate(Void... values) {
-			refreshTitle();
-		}
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            refreshTitle();
+        }
 
-		@Override
-		protected Void doInBackground(Void... params) {
-			PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-			PowerManager.WakeLock wakeLock = pm.newWakeLock(
-					PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
-			wakeLock.acquire();
-			try {
-				while (!isCancelled()) {
-					// new generation ready, hurray!
-					if (!doIteration()) {
-						// exit on error
-						return null;
-					}
-					// tell everyone
-					publishProgress();
-					// sleep for next generation
-					try {
-						Thread.sleep(Setup.ITERATION_DELAY_MS);
-					} catch (InterruptedException e) {
-						// ignore
-					}
-				}
-				return null;
-			} finally {
-				wakeLock.release();
-			}
-		}
+        @Override
+        protected Void doInBackground(Void... params) {
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            PowerManager.WakeLock wakeLock = pm.newWakeLock(
+                    PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
+            wakeLock.acquire();
+            try {
+                while (!isCancelled()) {
+                    // new generation ready, hurray!
+                    if (!doIteration()) {
+                        // exit on error
+                        return null;
+                    }
+                    // tell everyone
+                    publishProgress();
+                    // sleep for next generation
+                    try {
+                        Thread.sleep(Setup.ITERATION_DELAY_MS);
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
+                }
+                return null;
+            } finally {
+                wakeLock.release();
+            }
+        }
 
-		@Override
-		protected void onPostExecute(Void result) {
-			// clean exit on error
-			mIterationTask = null;
-		}
-	}
+        @Override
+        protected void onPostExecute(Void result) {
+            // clean exit on error
+            mIterationTask = null;
+        }
+    }
 }

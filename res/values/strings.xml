@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--***************************************************************************
+<!--
+ ***************************************************************************
  *  Droid of Life, an open source Android game based on Conway's Game of Life *
  *  Copyright (C) 2012  Christian Ulrich <chrulri@gmail.com>                  *
  *                                                                            *
@@ -15,8 +16,10 @@
  *                                                                            *
  *  You should have received a copy of the GNU General Public License         *
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.     *
- ***************************************************************************-->
+ ***************************************************************************
+-->
 <resources>
+
     <string name="app_name">Droid of Life</string>
     <string name="auto_short">AUTO</string>
     <string name="automatic">Automatic</string>
@@ -43,4 +46,5 @@ GNU General Public License for more details.<br/>
 <br/>
 You should have received a copy of the GNU General Public License<br/>
 along with this program.  If not, see &lt;www.gnu.org/licenses&gt;.]]></string>
+
 </resources>
