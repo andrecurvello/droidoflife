@@ -17,10 +17,11 @@
  ******************************************************************************/
 package com.chrulri.droidoflife;
 
-import android.os.Bundle;
-import android.preference.PreferenceActivity;
+import com.actionbarsherlock.app.SherlockPreferenceActivity;
 
-public class SettingsActivity extends PreferenceActivity {
+import android.os.Bundle;
+
+public class SettingsActivity extends SherlockPreferenceActivity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

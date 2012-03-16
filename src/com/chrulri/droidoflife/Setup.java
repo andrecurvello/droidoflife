@@ -23,7 +23,7 @@ final class Setup {
 	private Setup() {
 	}
 
-	static final boolean DEBUGGING = true;
+	static final boolean DEBUGGING = false;
 
 	static final long ITERATION_DELAY_MS = 100;
 

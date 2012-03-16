@@ -22,14 +22,13 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.view.Menu;
-import android.support.v4.view.MenuItem;
 
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuItem;
 import com.chrulri.droidoflife.LifeRuntime.LifeRuntimeException;
 
-public class MainActivity extends FragmentActivity {
+public class MainActivity extends SherlockFragmentActivity {
 	static final String TAG = MainActivity.class.getSimpleName();
 
 	static final int RESULT_SETTINGS = 0xF0;
@@ -129,7 +128,7 @@ public class MainActivity extends FragmentActivity {
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		getMenuInflater().inflate(R.menu.main, menu);
+		getSupportMenuInflater().inflate(R.menu.main, menu);
 		return super.onCreateOptionsMenu(menu);
 	}
 
@@ -137,7 +136,7 @@ public class MainActivity extends FragmentActivity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.mi_manually:
-			Log.debug(TAG, "trigger manuel iteration");
+			Log.debug(TAG, "trigger manual iteration");
 			// disable iteration task for manual mode
 			if (mIterationTask != null) {
 				mIterationTask.cancel(false);
@@ -173,7 +172,7 @@ public class MainActivity extends FragmentActivity {
 			return true;
 		case R.id.mi_about:
 			Log.debug(TAG, "open about dialog");
-			DialogFragment about = new AboutDialogFragment();
+			AboutDialogFragment about = new AboutDialogFragment();
 			about.show(getSupportFragmentManager(), null);
 			return true;
 		}
