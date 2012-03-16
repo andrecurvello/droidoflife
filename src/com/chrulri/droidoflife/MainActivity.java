@@ -77,7 +77,7 @@ public class MainActivity extends FragmentActivity {
 	private boolean doIteration() {
 		try {
 			LifeRuntime.iterate();
-			mLifeView.performRender();
+			mLifeView.performRender(true);
 		} catch (IllegalAccessException e) {
 			Log.error(TAG, "error on iteration", e);
 			return false;
