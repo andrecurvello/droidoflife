@@ -24,8 +24,6 @@ final class Setup {
     private Setup() {
     }
 
-    static final boolean DEBUGGING = false;
-
     static final long ITERATION_DELAY_MS = 100;
 
     static final Uri HELP_VIDEO_URI = Uri
