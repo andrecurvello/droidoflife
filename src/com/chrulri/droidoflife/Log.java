@@ -23,7 +23,7 @@ public final class Log {
     }
 
     public static void debug(String tag, String msg) {
-        if (BuildConfig.DEBUG) {
+        if (Setup.DEBUGGING) {
             android.util.Log.d(tag, msg);
         }
     }
