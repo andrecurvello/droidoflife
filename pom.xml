@@ -79,18 +79,6 @@
 						</zipalign>
 					</configuration>
 				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-jarsigner-plugin</artifactId>
-					<version>1.2</version>
-					<configuration>
-						<archive>${project.build.directory}/${apk.prefix}-${project.artifactId}-${project.version}.apk</archive>
-						<alias>com.chrulri.droidoflife</alias>
-						<keypass>com.chrulri.droidoflife</keypass>
-						<storepass>com.chrulri.droidoflife</storepass>
-						<keystore>debug.keystore</keystore>
-					</configuration>
-				</plugin>
 			</plugins>
 		</pluginManagement>
 
@@ -120,6 +108,18 @@
 					</ndk>
 				</configuration>
 				<extensions>true</extensions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jarsigner-plugin</artifactId>
+				<version>1.2</version>
+				<configuration>
+					<archive>${project.build.directory}/${apk.prefix}-${project.artifactId}-${project.version}.apk</archive>
+					<alias>com.chrulri.droidoflife</alias>
+					<keypass>com.chrulri.droidoflife</keypass>
+					<storepass>com.chrulri.droidoflife</storepass>
+					<keystore>debug.keystore</keystore>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
