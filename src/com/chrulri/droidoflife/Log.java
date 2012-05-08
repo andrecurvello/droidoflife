@@ -22,13 +22,13 @@ public final class Log {
     private Log() {
     }
 
-    public static void debug(String tag, String msg) {
+    public static void debug(String tag, String msg, Object... args) {
         if (Setup.DEBUGGING) {
-            android.util.Log.d(tag, msg);
+            android.util.Log.d(tag, String.format(msg, args));
         }
     }
 
-    public static void error(String tag, String msg, Throwable t) {
-        android.util.Log.e(tag, msg, t);
+    public static void error(String tag, String msg, Throwable t, Object... args) {
+        android.util.Log.e(tag, String.format(msg, args), t);
     }
 }
