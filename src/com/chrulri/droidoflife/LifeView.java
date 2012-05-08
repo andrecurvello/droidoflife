@@ -180,17 +180,22 @@ public class LifeView extends SurfaceView {
             mMatrix.setRectToRect(mSource, mBounds, ScaleToFit.CENTER);
         }
 
+        validateMatrix();
         performRender(false);
     }
 
     public void performDrag(float deltaX, float deltaY) {
         mMatrix.postTranslate(-deltaX, -deltaY);
-        // validate matrix
+
+        validateMatrix();
+        performRender(false);
+    }
+
+    private void validateMatrix() {
         float[] values = new float[9];
         mMatrix.getValues(values);
-        float minLeft = mBounds.width() - values[Matrix.MSCALE_X] * mSource.width();
-        float minTop = mBounds.height() - values[Matrix.MSCALE_Y] * mSource
-                .height();
+        float minLeft = mBounds.width() - (values[Matrix.MSCALE_X] * mSource.width());
+        float minTop = mBounds.height() - (values[Matrix.MSCALE_Y] * mSource.height());
 
         float left = Math.min(values[Matrix.MTRANS_X], 0);
         if (left < minLeft) {
@@ -211,8 +216,6 @@ public class LifeView extends SurfaceView {
         values[Matrix.MTRANS_X] = left;
         values[Matrix.MTRANS_Y] = top;
         mMatrix.setValues(values);
-
-        performRender(false);
     }
 
     public void performBirth(float x, float y) {
