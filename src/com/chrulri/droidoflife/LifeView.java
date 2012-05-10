@@ -22,9 +22,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Matrix.ScaleToFit;
-import android.graphics.Paint;
 import android.graphics.RectF;
 import android.preference.PreferenceManager;
 import android.util.AttributeSet;
@@ -40,9 +40,9 @@ public class LifeView extends SurfaceView {
 
     private int mSettings;
     private Bitmap mBitmap;
-    private Matrix mMatrix = new Matrix();
-    private RectF mBounds = new RectF();
-    private RectF mSource = new RectF();
+    private final Matrix mMatrix = new Matrix();
+    private final RectF mBounds = new RectF();
+    private final RectF mSource = new RectF();
     private GestureDetector mDragGesture;
     private ScaleGestureDetector mZoomGesture;
 
@@ -162,7 +162,7 @@ public class LifeView extends SurfaceView {
 
             Canvas canvas = getHolder().lockCanvas();
             if (canvas != null) {
-                canvas.drawPaint(new Paint());
+                canvas.drawColor(Color.BLACK);
                 canvas.drawBitmap(mBitmap, mMatrix, null);
                 getHolder().unlockCanvasAndPost(canvas);
             }
