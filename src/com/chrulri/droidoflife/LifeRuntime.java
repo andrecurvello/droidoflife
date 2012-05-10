@@ -19,6 +19,7 @@
 package com.chrulri.droidoflife;
 
 import android.graphics.Bitmap;
+import android.graphics.Color;
 
 /**
  * Droid of Life - Native Worker Class
@@ -43,7 +44,7 @@ final class LifeRuntime {
 
     private static native void nRuntimeDestroy();
 
-    private static native void nRuntimeBitmap(Bitmap bmp, int settings);
+    private static native void nRuntimeBitmap(Bitmap bmp, int settings, int colorAlive, int colorBorn, int colorDied, int colorDead);
 
     /* ************************************************************************************************************* */
 
@@ -93,7 +94,7 @@ final class LifeRuntime {
      * tell native runtime to render the scene
      */
     public static void render(Bitmap bmp, int settings) {
-        nRuntimeBitmap(bmp, settings);
+        nRuntimeBitmap(bmp, settings, Color.GREEN, 0xFF008800, Color.GRAY, Color.BLACK);
     }
 
     /**

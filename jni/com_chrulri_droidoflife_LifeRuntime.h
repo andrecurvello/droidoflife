@@ -40,10 +40,10 @@ JNIEXPORT void JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy
 /*
  * Class:     com_chrulri_droidoflife_LifeRuntime
  * Method:    nRuntimeBitmap
- * Signature: (Landroid/graphics/Bitmap;I)V
+ * Signature: (Landroid/graphics/Bitmap;IIIII)V
  */
 JNIEXPORT void JNICALL Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap
-  (JNIEnv *, jclass, jobject, jint);
+  (JNIEnv *, jclass, jobject, jint, jint, jint, jint, jint);
 
 #ifdef __cplusplus
 }

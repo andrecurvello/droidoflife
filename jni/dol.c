@@ -43,11 +43,6 @@
 #define MIN_ALIVE_NEIGHBOURS	2
 #define MAX_ALIVE_NEIGHBOURS	3
 
-#define COLOR_ALIVE	0xFF00FF00
-#define COLOR_BORN	0xFF008800
-#define COLOR_DEAD	0xFF000000
-#define COLOR_DIED	0xFF888888
-
 typedef uint8_t cell_t;
 typedef cell_t* cbuf_t;
 #define BITS	(sizeof(cell_t)*8)
@@ -283,7 +278,8 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeDestroy(JNIEnv *env UNUSED
 	LOGD("nRuntimeDestroy() exited");
 }
 
-void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass clazz UNUSED, jobject bitmap, jint settings) {
+void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass clazz UNUSED, jobject bitmap, jint settings,
+		jint colorAlive, jint colorBorn, jint colorDied, jint colorDead) {
 	LOGD("nRuntimeBitmap(%d) called", bitmap);
 
 	lockRuntime();
@@ -324,8 +320,8 @@ void Java_com_chrulri_droidoflife_LifeRuntime_nRuntimeBitmap(JNIEnv *env, jclass
 	for(i = 0; i < s_worldsize; i++) {
 		b = enableBornDeath ? isBitSet(s_cbuf_l, i) : 0;
 		*(ptr++) = isBitSet(s_cbuf, i) ?
-				(b ? COLOR_BORN : COLOR_ALIVE) :
-				(b ? COLOR_DIED : COLOR_DEAD);
+				(b ? colorBorn : colorAlive) :
+				(b ? colorDied : colorDead);
 	}
 
 	if((ret = AndroidBitmap_unlockPixels(env, bitmap))) {
