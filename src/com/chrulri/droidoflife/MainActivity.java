@@ -38,11 +38,11 @@ public class MainActivity extends SherlockFragmentActivity {
     private LifeView mLifeView;
 
     private void refreshTitle() {
-        String title = "" + getText(R.string.app_name);
+        String title = "";
         // append iteration
         int iteration = LifeRuntime.getIteration();
         if (iteration > 0) {
-            title += " (#" + iteration + ")";
+            title += " #" + iteration;
         }
         // append automatic mode
         if (mIterationTask != null) {
@@ -89,7 +89,6 @@ public class MainActivity extends SherlockFragmentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        getSupportActionBar().setDisplayShowHomeEnabled(false);
 
         mLifeView = (LifeView) findViewById(R.id.main_lifeView);
         mLifeView.loadRuntimeSettings();
