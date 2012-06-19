@@ -37,7 +37,7 @@ libraries, the Android Development Kit and Eclipse ADT.
 
 Integration ActionBarSherlock into Eclipse
 ------------------------------------------
-Download version 4.0.x of [ActionBarSherlock][5] and unpack it to wherever it fits you. To integrate ActionBarSherlock into Eclipse you must add it as a "library project". Open Eclipse and create a new Android Project using the ./library path from the downloaded sources.
+Download version 4.x of [ActionBarSherlock][5] and unpack it to wherever it fits you. To integrate ActionBarSherlock into Eclipse you must add it as a "library project". Open Eclipse and create a new Android Project using the ./library path from the downloaded sources.
 
 * File -> New -> Android Project -> Create project from existing source
 * Point to the ActionBarSherlock ./library folder
